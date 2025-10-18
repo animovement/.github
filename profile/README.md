@@ -10,12 +10,12 @@ The *animovement* package consists of six core packages, each focused on a speci
 
 | Package   | Core purpose      | Short description                                                                                     |
 |-----------|-------------------|--------------------------------------------------------------------------------------------------------|
-| aniframe  | Foundations       | Defines S3 classes and methods for consistent movement data structures.                               |
-| aniread   | Import / Export   | Reads/writes data from video trackers, trackballs, and other sources.                                 |
-| anicheck  | Quality control   | Diagnostics for missing values, temporal gaps, and spatial outliers.                                 |
-| aniprocess| Signal processing | Filtering, smoothing, and advanced trajectory processing.                                            |
-| animetric | Metrics           | Calculates kinematics, navigation statistics, and social interaction measures.                       |
-| anivis    | Visualisation     | Publication‑ready plots of trajectories, diagnostics, and metrics.                                   |
+| [aniframe](https://github.com/animovement/aniframe)  | Foundations       | Defines S3 classes and methods for consistent movement data structures.                               |
+| [aniread](https://github.com/animovement/aniread)   | Import / Export   | Reads/writes data from video trackers, trackballs, and other sources.                                 |
+| [anicheck](https://github.com/animovement/anicheck)  | Quality control   | Diagnostics for missing values, temporal gaps, and spatial outliers.                                 |
+| [aniprocess](https://github.com/animovement/aniprocess)| Signal processing | Filtering, smoothing, and advanced trajectory processing.                                            |
+| [animetric](https://github.com/animovement/animetric) | Metrics           | Calculates kinematics, navigation statistics, and social interaction measures.                       |
+| [anivis](https://github.com/animovement/anivis)    | Visualisation     | Publication‑ready plots of trajectories, diagnostics, and metrics.                                   |
 
 
 ## Documentation & Tutorials
@@ -25,8 +25,5 @@ The *animovement* package consists of six core packages, each focused on a speci
 
 ## Contributing
 We welcome contributions! Please read the full contribution guide in the repo’s CONTRIBUTING.md for detailed instructions.
-
-## License
-animovement is released under the MIT License. See the LICENSE file in the repository for the full text.
 
 Feel free to reach out if you have questions, suggestions, or want to collaborate—happy analysing!
