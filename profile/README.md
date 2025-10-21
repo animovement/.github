@@ -3,7 +3,9 @@
 [![R‑CMD‑check](https://github.com/animovement/animovement/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/animovement/animovement/actions/workflows/R-CMD-check.yaml)
 [![animovement status badge](https://animovement.r-universe.dev/badges/animovement)](https://animovement.r-universe.dev)
 
-_animovement_ is an open‑source R toolbox for analysing movement across space and time. It provides a modular, tidyverse‑friendly ecosystem of packages that cover the whole workflow—from importing raw tracking data to visualising and quantifying movement metrics. _animovement_ is designed for ethologists, behavioural ecologists, neuroscientists, and anyone who needs robust movement analysis tools. The suite follows a modular architecture, allowing you to pick just the components you need while still benefiting from a coherent, interoperable workflow.
+_animovement_ is an open‑source R toolbox for analysing movement across space and time. It provides a modular, tidyverse‑friendly ecosystem of packages that cover the whole workflow—from importing raw tracking data to visualising and quantifying movement metrics. 
+
+_animovement_ is designed for ethologists, behavioural ecologists, neuroscientists, biomechanicists and anyone who needs robust movement analysis tools. The suite follows a modular architecture, allowing you to pick just the components you need while still benefiting from a coherent, interoperable workflow.
 
 ## Packages
 The *animovement* package consists of six core packages, each focused on a specific stage of the workflow:
