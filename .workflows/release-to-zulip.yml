@@ -14,7 +14,7 @@ jobs:
           api-key: ${{ secrets.ZULIP_API_KEY }}
           email: "releases-bot@animovement.zulipchat.com	"
           organization-url: "https://animovement.zulipchat.com"
-          to: "github"
+          to: "announcements"
           type: "stream"
           topic: "releases"
           content: |
