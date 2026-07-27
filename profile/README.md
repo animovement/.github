@@ -1,7 +1,6 @@
-# animovement 🦎
-[![DOI](https://zenodo.org/badge/773406370.svg)](https://doi.org/10.5281/zenodo.13235277)
-[![R‑CMD‑check](https://github.com/animovement/animovement/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/animovement/animovement/actions/workflows/R-CMD-check.yaml)
-[![animovement status badge](https://animovement.r-universe.dev/badges/animovement)](https://animovement.r-universe.dev)
+<img width="2400" height="400" alt="readme-banner" src="https://github.com/user-attachments/assets/f5631f3a-6d3a-49c5-ad7a-951fdeedb908" />
+
+---
 
 _animovement_ is an open‑source R toolbox for analysing movement across space and time. It provides a modular, tidyverse‑friendly ecosystem of packages that cover the whole workflow—from importing raw tracking data to visualising and quantifying movement metrics. 
 
