@@ -109,65 +109,87 @@ Both require a maintainer to run them, so ask in the pull request if you would l
 ### Writing function documentation
 
 Documentation is written with [roxygen2](https://roxygen2.r-lib.org), and pkgdown regenerates
-`reference/<function>.md` and `llms.txt` from it. So one block serves the help page, the website,
-and any coding assistant reading the published docs — which is why it is worth writing tightly.
+`reference/<function>.md` and `llms.txt` from it — so one block serves the help page, the website,
+and any coding assistant reading the published docs.
 
-**Aim for short.** A reader scanning a help page wants to know what a function does, what to pass
-it, and what comes back. Length is not thoroughness; a padded description is harder to use than a
-one-line one.
+We follow the [tidyverse style guide for documentation](https://style.tidyverse.org/documentation.html)
+and the [rOpenSci packaging guide](https://devguide.ropensci.org/pkg_building.html#documentation).
+The rules below are the parts that come up most; where this section is silent, those are the
+reference.
 
-- **Title** — a single line, sentence case, no full stop. Say what the function does, not that it
-  is a function: "Convert a data frame to aniframe", not "A function which converts...".
-- **Description** — usually one sentence. Skip it entirely if the title already says it; roxygen
-  will reuse the title.
-- **`@param`** — what the argument is, and any constraint that is not obvious from its name.
-  `@param threshold Confidence below which observations are masked.` Do not restate the type
-  where the name already carries it.
-- **`@return`** — always present, and specific about shape. For this suite, say whether an aniframe
-  comes back and what changed: "An aniframe with `rho` and `phi` in place of `x` and `y`" beats
-  "The transformed data".
-- **`@details`** — only when there is something non-obvious: an algorithm choice, an edge case, a
-  reason the default is what it is. Most functions do not need one.
-- **`@inheritParams`** — use it rather than repeating a shared argument's description. Divergent
-  copies of the same `@param` are how documentation starts lying.
+**Title and description**
 
-Things to avoid, because they add length without adding information: opening with "This function",
-restating the function name in prose, describing arguments as "a parameter that...", hedging
-("might", "can be used to"), and closing summaries that repeat the description.
+- The first line is the title: one line, sentence case, **no full stop**. Say what the function does
+  — "Map from Cartesian to polar coordinates".
+- A description is a separate paragraph after a blank line. Omit it if the title already says it;
+  roxygen reuses the title. You only need an explicit `@description` tag when it runs to several
+  paragraphs or contains a bulleted list.
+
+**Arguments and return**
+
+- `@param`, `@return` and `@seealso` text is a **sentence**: capital letter, full stop. This holds
+  even for a few words.
+- **Document defaults explicitly.** rOpenSci asks for "A logical value (default `TRUE`) determining
+  whether…" rather than "A logical value determining whether…".
+- **`@return` is required on every exported function**, and should say what type comes back. For
+  this suite, name what changed: "An aniframe with `rho` and `phi` in place of `x` and `y`" is worth
+  far more than "The transformed data".
+- Use `@inheritParams` rather than repeating a shared argument. Divergent copies of the same
+  `@param` are how documentation starts to lie.
+
+**Formatting**
+
+- One space after `#'`. Text continuing onto another line gets two extra spaces of indent, unless
+  the tag sits on its own line (as with `@examples`).
+- Backtick anything that is R code: argument names, values (`TRUE`, `NA`, `NULL`), literal calls,
+  and class names.
+- For functions, prefer a cross-link `[map_to_polar()]` over code font — it is navigable. Link the
+  first mention in a topic; repeats can be plain.
+- **Do not put package names in code font**, and do not capitalise them at the start of a sentence:
+  "aniframe provides the core data structures", not "`aniframe` provides…" or "Aniframe provides…".
+- Group related functions with `@family`, so `@seealso` sections generate themselves.
+- Document internal functions the same way, with `@noRd` instead of `@export`, so no `.Rd` file is
+  generated.
+
+**Length.** Be brief in the description and generous in the parameters. A padded description is
+harder to use than a one-line one, so avoid opening with "This function", restating the function's
+name in prose, hedging ("can be used to"), and closing summaries that repeat what was already said.
 
 ### Writing examples
 
 Every exported function should have a runnable example. `R CMD check` executes them, so an example
-that stops working fails CI — which is exactly why they are worth more than prose.
+that stops working fails CI — which is why they are worth more than prose. Run them locally with
+`devtools::run_examples()`.
 
-- **Keep them to a few lines.** Two is often enough.
-- **Use `aniframe::example_aniframe()`** for anything that takes an aniframe, at the smallest shape
-  that demonstrates the point — `example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)`
-  is a complete, valid frame. For functions taking plain vectors or data frames, write the input
-  inline.
-- **Do not narrate.** Comments explaining what the next line does are noise; the reader can see the
-  call. A comment earns its place only when it explains something the code cannot, such as why a
-  particular argument value matters.
-- **Show output only when the output is the point.** A converter returning `5` is worth showing; a
-  large aniframe printing forty rows is not.
-- **Avoid `\dontrun{}`.** It hides the example from `R CMD check`, so it rots silently. Use it only
-  where the example genuinely cannot run in check — network access, a file the user must supply, or
-  something interactive. `@examplesIf` is better where the condition can be tested.
-- **Prefer a realistic call.** Arguments chosen to make the example run, rather than to show the
+- **Cover the useful cases, not just one.** Established practice here is thorough rather than
+  minimal — dplyr's `slice()` examples run to twenty lines because `slice()` has that many variants
+  worth showing. The test is whether each line demonstrates something the previous ones did not,
+  not whether the block is short.
+- **Comments are welcome when they earn their place.** A comment that contrasts behaviours or gives
+  the reason for an argument is useful; one that restates the call underneath it is noise:
+
+  ```r
+  # Good — says something the code does not
+  # Rows can be dropped with negative indices:
+  slice(mtcars, -(1:4))
+
+  # Bad — restates the call
+  # Slice the first row
+  slice(mtcars, 1)
+  ```
+
+- **Use `aniframe::example_aniframe()`** for anything taking an aniframe, at the smallest shape that
+  makes the point: `example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)` is a complete,
+  valid frame. **Namespace it** — under `R CMD check` only the documented package is attached, so an
+  unqualified call fails everywhere except aniframe itself. For plain vectors or data frames, write
+  the input inline.
+- **The pipe is fine**, and often reads better for a sequence of operations, as it does in dplyr.
+- **Prefer a realistic call.** Arguments chosen so the example runs, rather than to show the
   function doing its job, teach nothing. Where a value carries the meaning — a filter cutoff, an
-  outlier threshold — pick one that visibly changes the result.
-
-A good example, from `aniprocess`:
-
-```r
-#' @examples
-#' coords <- data.frame(x = 1:5, y = 6:10)
-#' filter_na_confidence(
-#'   coords,
-#'   threshold = 0.6,
-#'   confidence = c(0.5, 0.7, 0.4, 0.8, 0.9)
-#' )
-```
+  outlier threshold — choose one that visibly changes the result.
+- **Avoid `\dontrun{}`.** It hides the example from `R CMD check`, so it rots unnoticed. Reserve it
+  for examples that genuinely cannot run there — network access, a file the user supplies,
+  something interactive — and prefer `@examplesIf` where the condition can be tested.
 
 ### Issues and pull requests
 
