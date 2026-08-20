@@ -19,7 +19,9 @@ You can use any tools that help you understand the codebase and write good code,
 
 2. **Verify that functions exist, and check their signatures against the source.** This matters more here than in most projects. animovement is a suite of eight packages that has been through a split and continues to evolve, so plausible-sounding function names may belong to a different package than an LLM claims, may have changed signature, or may never have existed. If a suggested call looks reasonable but you haven't seen it in the source or the reference documentation, assume it is wrong until checked.
 
-3. If you work with an agent, point it at our [Claude Code skill](https://github.com/animovement/claude-skills). It maps which package owns what, describes the aniframe data model, and instructs the agent to verify signatures in the source rather than guessing.
+3. **Give your assistant the real documentation rather than letting it guess.** Every package site publishes a machine-readable reference at `https://animovement.dev/<package>/llms.txt` — for example [aniframe's](https://animovement.dev/aniframe/llms.txt). Any assistant can read those, and they are generated from the source, so they cannot drift from the package the way a model's training data can.
+
+   Where a repository has an `AGENTS.md`, that is the entry point for how we work in it. Claude Code users can additionally install the [animovement skill](https://github.com/animovement/claude-skills), which packages the same material with automatic triggering.
 
 4. Try to submit changes in **small, self-contained pull requests**, even if an LLM generated them all in one go.
 
