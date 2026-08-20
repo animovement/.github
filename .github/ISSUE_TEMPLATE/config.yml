@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or discussion
+    url: https://animovement.zulipchat.com
+    about: For questions about using animovement, or to discuss an idea before opening an issue, come and chat with us on Zulip.
+  - name: Documentation and tutorials
+    url: https://animovement.dev
+    about: Guides and worked examples for analysing movement data across the ecosystem.
