@@ -1,4 +1,4 @@
-Before submitting a pull request, please read the [contributing guide](https://github.com/animovement/.github/blob/main/CONTRIBUTING.md).
+Before submitting a pull request, please read the [contributing guide](https://github.com/animovement/.github/blob/main/CONTRIBUTING.md), and — if you used AI tools — the [AI use policy](https://github.com/animovement/.github/blob/main/AI.md).
 
 Fill in as much of this as you can. If anything is unclear, leave a comment and we will help out — an incomplete pull request is much better than none.
 
@@ -39,3 +39,4 @@ Function documentation lives with the code as roxygen comments. Tutorials that s
 - [ ] Documentation regenerated if roxygen comments changed (`devtools::document()`, or comment `/document` on this PR)
 - [ ] Code is formatted with [air](https://posit-dev.github.io/air/) (or comment `/style` on this PR)
 - [ ] A `NEWS.md` bullet added under `# (development version)` for any user-facing change
+- [ ] I have read and understood every change I am submitting, and tested it myself
