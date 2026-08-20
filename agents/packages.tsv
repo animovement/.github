@@ -1,0 +1,8 @@
+animovement	the meta-package that installs, attaches and keeps the suite in sync
+aniframe	the core data structures that the rest of the suite is built on
+aniread	reading and writing movement data
+anicheck	diagnosing movement data quality
+aniprocess	signal processing and filtering of movement trajectories
+anispace	spatial transformations and coordinate systems
+animetric	movement metrics, from kinematics to summary statistics
+anivis	visualising movement data and diagnostics
