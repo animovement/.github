@@ -1,0 +1,121 @@
+# Reconciles the org project board against every open issue and pull request
+# in the organisation.
+#
+# Deliberately a sweep rather than a per-repository `on: issues` stub. A stub
+# is only as good as its presence: it has to be added to every repository and
+# remembered for every new one, and when it is missing nothing says so. That is
+# how an entire repository came to be absent from the board -- along with two
+# others nobody had noticed were missing.
+#
+# So repositories are discovered from the org API instead of being listed
+# anywhere, which means a new repository is covered from the day it is created
+# and there is nothing per-repository to maintain. The cost is that an item can
+# take up to an hour to appear; run this by hand to add one immediately.
+#
+# Needs a PAT with the `project` scope, as an *organisation* secret named
+# PROJECT_TOKEN (or AGENTS_SYNC_TOKEN, if that one already carries the scope):
+# GITHUB_TOKEN cannot write to an organisation project no matter what
+# `permissions` it is given.
+name: Project Sweep
+
+on:
+  schedule:
+    # Hourly, off the hour: scheduled runs bunch up on the hour and GitHub
+    # drops them when too many fire at once.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Report what is missing without adding anything"
+        type: boolean
+        default: false
+      skip:
+        description: "Space-separated repository names to leave off the board"
+        type: string
+        required: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add every open issue and pull request missing from the board
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN || secrets.AGENTS_SYNC_TOKEN }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          # Every non-archived repository is swept by default. Set this to
+          # keep scratch repositories (`playground`) off the board -- as an
+          # input for one run, or by editing the default here to make it stick.
+          SKIP_REPOS: ${{ inputs.skip || '' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::No PROJECT_TOKEN or AGENTS_SYNC_TOKEN secret is set." \
+              "Both must be organisation secrets to be visible here."
+            exit 1
+          fi
+
+          owner=animovement
+          project=1
+
+          # What is on the board already. Closed items stay on the board and are
+          # listed here too, which is what we want: a closed issue must not be
+          # re-added if it is reopened-then-closed between sweeps.
+          gh project item-list "$project" --owner "$owner" --limit 2000 \
+            --format json \
+            | jq -r '.items[] | .content.url // empty' \
+            | sort -u > on-board.txt
+          echo "On the board: $(wc -l < on-board.txt)"
+
+          # Every open issue and PR, across every non-archived repository.
+          : > open.txt
+          repos=$(gh api "orgs/$owner/repos" --paginate \
+            --jq '.[] | select(.archived | not) | .name')
+          for repo in $repos; do
+            if printf '%s\n' $SKIP_REPOS | grep -qx "$repo"; then
+              echo "Skipping $repo"
+              continue
+            fi
+
+            # `gh issue list` includes pull requests in some views, so ask for
+            # each separately and let the URL path (/issues/ vs /pull/) be the
+            # discriminator -- that is also the form the board reports.
+            gh issue list -R "$owner/$repo" --state open --limit 500 \
+              --json url --jq '.[].url' >> open.txt 2>/dev/null || true
+            gh pr list -R "$owner/$repo" --state open --limit 500 \
+              --json url --jq '.[].url' >> open.txt 2>/dev/null || true
+          done
+          sort -u -o open.txt open.txt
+          echo "Open across the org: $(wc -l < open.txt)"
+
+          comm -23 open.txt on-board.txt > missing.txt
+          count=$(wc -l < missing.txt | tr -d ' ')
+
+          if [ "$count" -eq 0 ]; then
+            echo "Board is up to date."
+            exit 0
+          fi
+
+          echo "Missing from the board: $count"
+          sed 's/^/  /' missing.txt
+
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            echo "Dry run -- nothing added."
+            exit 0
+          fi
+
+          failed=0
+          while read -r url; do
+            [ -n "$url" ] || continue
+            if gh project item-add "$project" --owner "$owner" --url "$url" \
+              > /dev/null; then
+              echo "  + $url"
+            else
+              # One unaddable item must not abandon the rest of the sweep.
+              echo "::warning::Could not add $url"
+              failed=$((failed + 1))
+            fi
+          done < missing.txt
+
+          echo "Added $((count - failed)) item(s); $failed failed."
+          [ "$failed" -eq 0 ]
