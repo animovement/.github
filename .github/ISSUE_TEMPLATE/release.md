@@ -26,7 +26,7 @@ Bump the version in **every** place that carries it:
 - [ ] `README.md` — re-render it. The version is embedded in the startup banner and the citation block, so it goes stale silently:
 
   ```r
-  # packages with a README.qmd (animovement, aniframe)
+  # packages with a README.qmd
   quarto::quarto_render("README.qmd")     # or, in a terminal: quarto render README.qmd
 
   # packages with a README.Rmd
