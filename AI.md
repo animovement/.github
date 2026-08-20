@@ -19,16 +19,14 @@ You can use any tools that help you understand the codebase and write good code,
 
 2. **Verify that functions exist, and check their signatures against the source.** This matters more here than in most projects. animovement is a suite of eight packages that has been through a split and continues to evolve, so plausible-sounding function names may belong to a different package than an LLM claims, may have changed signature, or may never have existed. If a suggested call looks reasonable but you haven't seen it in the source or the reference documentation, assume it is wrong until checked.
 
-3. **Give your assistant the real documentation rather than letting it guess.** Every package site publishes its reference documentation as markdown, which any assistant can read:
+3. **Give your assistant the real documentation rather than letting it guess.** Every package site publishes its documentation as markdown, which any assistant can read:
 
-   - `https://animovement.dev/<package>/reference/index.md` — every exported function, grouped, with a one-line description
-   - `https://animovement.dev/<package>/reference/<function>.md` — the full help page, including the exact signature
+   - `https://animovement.dev/<package>/llms.txt` — the README, then a complete index of every exported function, grouped by purpose with a one-line description of each, then the articles. A good place to start when you need to know what a package offers.
+   - `https://animovement.dev/<package>/reference/<function>.md` — the full help page for one function, including its exact signature.
 
-   For example, [aniframe's index](https://animovement.dev/aniframe/reference/index.md) and [`as_aniframe()`](https://animovement.dev/aniframe/reference/as_aniframe.md). These are generated from the roxygen comments in the source, so unlike a model's recollection they cannot drift from the installed package. Checking a signature there takes seconds and settles the question.
+   For example, [aniframe's llms.txt](https://animovement.dev/aniframe/llms.txt) and [`as_aniframe()`](https://animovement.dev/aniframe/reference/as_aniframe.md). These are generated from the roxygen comments in the source, so unlike a model's recollection they cannot drift from the installed package. Checking a signature there takes seconds and settles the question.
 
-   (`https://animovement.dev/<package>/llms.txt` also exists, but it is the rendered README rather than a function reference — it will not tell you whether a function exists.)
-
-   Where a repository has an `AGENTS.md`, that is the entry point for how we work in it.
+   What they do not give you is the shape of the ecosystem — which of the eight packages owns a given job, or how we work across them. Where a repository has an `AGENTS.md`, that is the entry point for that.
 
 4. Try to submit changes in **small, self-contained pull requests**, even if an LLM generated them all in one go.
 
