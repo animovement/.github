@@ -115,19 +115,22 @@ documentation in the next section.
 
 ### Documentation style
 
-Two established guides, rather than a house style of our own:
+We follow the [tidyverse guide to documentation](https://style.tidyverse.org/documentation.html):
+titles in sentence case without a full stop, `@param` and `@return` written as sentences,
+cross-links in preference to code font, `@noRd` on internal functions, `@family` to group related
+ones. It is short, and it pairs with the code style above — air implements the same guide, so the
+formatter and the written rules cannot disagree.
 
-- the [tidyverse guide to documentation](https://style.tidyverse.org/documentation.html) — titles,
-  `@param` and `@return` phrasing, cross-linking, when to use `@noRd` and `@family`
-- the [rOpenSci packaging guide](https://devguide.ropensci.org/pkg_building.html#documentation) —
-  examples on every exported function, `@return` always present, defaults documented explicitly
+Everything below is what that guide does not cover.
 
-animovement is in [pre-submission to rOpenSci](https://github.com/animovement/animovement/issues/92),
-so their guide is what these packages will be reviewed against.
+**Every exported function needs an example and a `@return`.** Examples are executed by
+`R CMD check`, so they are the part of the documentation that cannot quietly stop being true. Run
+them with `devtools::run_examples()`.
 
-Read those first. What follows is only what they cannot know about this suite.
+**Document defaults in the parameter.** "A logical value (default `TRUE`) determining whether…"
+rather than leaving the reader to find it in the signature.
 
-**Examples take an aniframe from `example_aniframe()`**
+**Examples take an aniframe from `example_aniframe()`**, at the smallest shape that makes the point:
 
 ```r
 #' @examples
@@ -135,14 +138,12 @@ Read those first. What follows is only what they cannot know about this suite.
 #' map_to_polar(af)
 ```
 
-Use the smallest shape that makes the point, and **namespace the call**: under `R CMD check` only
-the documented package is attached, so an unqualified `example_aniframe()` fails everywhere except
-in aniframe itself. For functions taking plain vectors or data frames, write the input inline.
+**Namespace that call.** Under `R CMD check` only the documented package is attached, so an
+unqualified `example_aniframe()` fails everywhere except in aniframe itself. For functions taking
+plain vectors or data frames, write the input inline.
 
-**`@return` should name what changed**
-
-rOpenSci asks for the type returned. For a suite built on one data structure, the type alone says
-little — nearly everything returns an aniframe. Say what is different about it:
+**`@return` should name what changed.** Nearly everything here returns an aniframe, so the type
+alone says little:
 
 ```r
 #' @return An aniframe with `rho` and `phi` in place of `x` and `y`.
@@ -150,10 +151,13 @@ little — nearly everything returns an aniframe. Say what is different about it
 
 not "An aniframe" or "The transformed data".
 
-**Where documentation belongs**
+**Avoid `\dontrun{}`.** It hides the example from `R CMD check`, so it rots unnoticed. Reserve it
+for examples that genuinely cannot run there — network access, a file the user supplies, something
+interactive — and prefer `@examplesIf` where the condition can be tested.
 
-Function reference lives with the code as roxygen comments. Tutorials spanning several packages
-live on [animovement.dev](https://animovement.dev) — see *Contributing documentation* below.
+**Where documentation belongs.** Function reference lives with the code as roxygen comments.
+Tutorials spanning several packages live on [animovement.dev](https://animovement.dev) — see
+*Contributing documentation* below.
 
 ### Issues and pull requests
 
