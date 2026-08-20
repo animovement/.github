@@ -106,6 +106,69 @@ Both require a maintainer to run them, so ask in the pull request if you would l
 
 - Function naming follows the verb prefixes each package owns — `read_`, `filter_`, `calculate_`, `check_`, `plot_` and so on. Match the surrounding code.
 
+### Writing function documentation
+
+Documentation is written with [roxygen2](https://roxygen2.r-lib.org), and pkgdown regenerates
+`reference/<function>.md` and `llms.txt` from it. So one block serves the help page, the website,
+and any coding assistant reading the published docs — which is why it is worth writing tightly.
+
+**Aim for short.** A reader scanning a help page wants to know what a function does, what to pass
+it, and what comes back. Length is not thoroughness; a padded description is harder to use than a
+one-line one.
+
+- **Title** — a single line, sentence case, no full stop. Say what the function does, not that it
+  is a function: "Convert a data frame to aniframe", not "A function which converts...".
+- **Description** — usually one sentence. Skip it entirely if the title already says it; roxygen
+  will reuse the title.
+- **`@param`** — what the argument is, and any constraint that is not obvious from its name.
+  `@param threshold Confidence below which observations are masked.` Do not restate the type
+  where the name already carries it.
+- **`@return`** — always present, and specific about shape. For this suite, say whether an aniframe
+  comes back and what changed: "An aniframe with `rho` and `phi` in place of `x` and `y`" beats
+  "The transformed data".
+- **`@details`** — only when there is something non-obvious: an algorithm choice, an edge case, a
+  reason the default is what it is. Most functions do not need one.
+- **`@inheritParams`** — use it rather than repeating a shared argument's description. Divergent
+  copies of the same `@param` are how documentation starts lying.
+
+Things to avoid, because they add length without adding information: opening with "This function",
+restating the function name in prose, describing arguments as "a parameter that...", hedging
+("might", "can be used to"), and closing summaries that repeat the description.
+
+### Writing examples
+
+Every exported function should have a runnable example. `R CMD check` executes them, so an example
+that stops working fails CI — which is exactly why they are worth more than prose.
+
+- **Keep them to a few lines.** Two is often enough.
+- **Use `aniframe::example_aniframe()`** for anything that takes an aniframe, at the smallest shape
+  that demonstrates the point — `example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)`
+  is a complete, valid frame. For functions taking plain vectors or data frames, write the input
+  inline.
+- **Do not narrate.** Comments explaining what the next line does are noise; the reader can see the
+  call. A comment earns its place only when it explains something the code cannot, such as why a
+  particular argument value matters.
+- **Show output only when the output is the point.** A converter returning `5` is worth showing; a
+  large aniframe printing forty rows is not.
+- **Avoid `\dontrun{}`.** It hides the example from `R CMD check`, so it rots silently. Use it only
+  where the example genuinely cannot run in check — network access, a file the user must supply, or
+  something interactive. `@examplesIf` is better where the condition can be tested.
+- **Prefer a realistic call.** Arguments chosen to make the example run, rather than to show the
+  function doing its job, teach nothing. Where a value carries the meaning — a filter cutoff, an
+  outlier threshold — pick one that visibly changes the result.
+
+A good example, from `aniprocess`:
+
+```r
+#' @examples
+#' coords <- data.frame(x = 1:5, y = 6:10)
+#' filter_na_confidence(
+#'   coords,
+#'   threshold = 0.6,
+#'   confidence = c(0.5, 0.7, 0.4, 0.8, 0.9)
+#' )
+```
+
 ### Issues and pull requests
 
 Please use the templates. They exist so that a report has what is needed to act on it — a reproducible example and `animovement_sitrep()` output for a bug, the *why* rather than the *what* for a pull request. Filling them in properly is the single biggest thing that gets a contribution reviewed quickly. This applies equally if you are drafting with an AI assistant: complete the template rather than replacing it with generated prose. See the [AI use policy](AI.md).
