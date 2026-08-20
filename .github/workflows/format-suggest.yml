@@ -1,0 +1,40 @@
+# Reusable workflow: suggest air formatting fixes on a pull request.
+# Derived from https://github.com/posit-dev/setup-air/tree/main/examples
+#
+# Called by a stub in each package repository. The caller triggers this on
+# `pull_request_target` and grants `pull-requests: write`; see the note in the
+# stub for why that trigger is used.
+name: format-suggest
+
+on:
+  workflow_call:
+
+jobs:
+  format-suggest:
+    name: format-suggest
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required to push suggestion comments to the PR
+      pull-requests: write
+
+    steps:
+      # `pull_request_target` runs against the target branch, so the pull
+      # request's own code has to be checked out explicitly. It is only ever
+      # read and reformatted here, never executed.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install
+        uses: posit-dev/setup-air@v1
+
+      - name: Format
+        run: air format .
+
+      - name: Suggest
+        uses: reviewdog/action-suggester@v1
+        with:
+          level: error
+          fail_level: error
+          tool_name: air
