@@ -26,7 +26,7 @@ You can use any tools that help you understand the codebase and write good code,
 
    For example, [aniframe's llms.txt](https://animovement.dev/aniframe/llms.txt) and [`as_aniframe()`](https://animovement.dev/aniframe/reference/as_aniframe.md). These are generated from the roxygen comments in the source, so unlike a model's recollection they cannot drift from the installed package. Checking a signature there takes seconds and settles the question.
 
-   What they do not give you is the shape of the ecosystem — which of the eight packages owns a given job, or how we work across them. Where a repository has an `AGENTS.md`, that is the entry point for that.
+   What they do not give you is the shape of the ecosystem — which of the eight packages owns a given job, or how we work across them. Where a repository has an `AGENTS.md`, that is the entry point for that, and [animovement-agents](https://github.com/animovement/animovement-agents) holds the ecosystem map itself: which package owns what, the aniframe data model, and the naming conventions.
 
 4. Try to submit changes in **small, self-contained pull requests**, even if an LLM generated them all in one go.
 
