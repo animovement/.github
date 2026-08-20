@@ -1,27 +1,90 @@
-name: Post Release Notes to Zulip
+# Reusable workflow: announces a release on Zulip.
+#
+# Called by a small stub in each package repository, so the logic lives here
+# only. A reusable workflow runs in the *caller's* context, so the `github`
+# context below refers to the package being released, not to this repository.
+name: Post Release Notes on Zulip
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: "Release tag to announce. Empty means the latest release."
+        required: false
+        type: string
+    secrets:
+      ZULIP_API_KEY:
+        required: true
 
 jobs:
   notify-zulip:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
+      - name: Look up the release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REPO: ${{ github.repository }}
+          PKG: ${{ github.event.repository.name }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "release" ]; then
+            tag="$EVENT_TAG"
+          elif [ -n "$INPUT_TAG" ]; then
+            tag="$INPUT_TAG"
+          else
+            tag=$(gh release view --json tagName --jq '.tagName')
+          fi
+          gh release view "$tag" --json tagName,name,url,body > release.json
+
+          # Release names are written in several styles across the ecosystem:
+          # "v0.4.0", "anicheck 0.2.0", "animovement v0.7.4" and
+          # "v0.4.0 - one source of truth for dimensionality". The heading
+          # already carries the package and tag, so strip any leading package
+          # name, version and separator and keep only the descriptive part.
+          # Names that are nothing but a version leave an empty subtitle.
+          name=$(jq -r '.name // ""' release.json)
+          subtitle=$(printf '%s' "$name" \
+            | sed -E "s/^${PKG}[[:space:]]+//" \
+            | sed -E 's/^v?[0-9]+(\.[0-9]+)*([-.][A-Za-z0-9]+)*[[:space:]]*//' \
+            | sed -E 's/^[[:space:]]*[—–:-][[:space:]]*//')
+
+          # Turn issue references into links, which GitHub renders but plain
+          # markdown does not. Both "#82" and "owner/repo#82" are handled. The
+          # leading guard keeps headings (## ...), hex colours (#FF0000) and
+          # URL fragments (example.com/docs#123) untouched.
+          jq -r '.body // ""' release.json \
+            | sed -E \
+              -e 's@(^|[^A-Za-z0-9_/#.-])([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)#([0-9]{1,5})@\1[\2#\3](https://github.com/\2/issues/\3)@g' \
+              -e "s@(^|[^A-Za-z0-9_/#.-])#([0-9]{1,5})@\1[#\2](https://github.com/${REPO}/issues/\2)@g" \
+            > body.md
+
+          {
+            echo "tag=$(jq -r '.tagName' release.json)"
+            echo "url=$(jq -r '.url' release.json)"
+            echo "subtitle=$subtitle"
+            echo "body<<ZULIP_RELEASE_BODY"
+            cat body.md
+            echo "ZULIP_RELEASE_BODY"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Send release notification to Zulip
         uses: zulip/github-actions-zulip/send-message@v1
         with:
           api-key: ${{ secrets.ZULIP_API_KEY }}
-          email: "releases-bot@animovement.zulipchat.com	"
+          email: "releases-bot@animovement.zulipchat.com"
           organization-url: "https://animovement.zulipchat.com"
           to: "announcements"
           type: "stream"
           topic: "releases"
           content: |
-            **[${{ github.event.release.name }}](${{ github.event.release.html_url }})** has been released!
+            # [${{ github.event.repository.name }} ${{ steps.release.outputs.tag }}](${{ steps.release.outputs.url }})
+            ${{ steps.release.outputs.subtitle != '' && format('**{0}**', steps.release.outputs.subtitle) || '' }}
 
-            **Tag:** `${{ github.event.release.tag_name }}`
-            **Repository:** [${{ github.repository }}](https://github.com/${{ github.repository }})
-
-            ### Release Notes
-            ${{ github.event.release.body }}
+            ${{ steps.release.outputs.body }}
