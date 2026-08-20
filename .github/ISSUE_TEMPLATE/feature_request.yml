@@ -1,0 +1,47 @@
+name: Feature request
+description: Suggest an idea for an animovement package
+type: Feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. If you would like to discuss the idea before writing it up,
+        [Zulip](https://animovement.zulipchat.com) is a good place to start.
+
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: |
+        What you are trying to do, and where the current packages get in the way. Describing the
+        problem rather than the solution often leads somewhere better.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+      description: |
+        If you have a sense of what the function or argument might look like, sketching the call
+        helps — it does not have to be right.
+      render: r
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What alternatives have you considered?
+      description: Including whether an existing function nearly does the job.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: The kind of movement data or experiment this relates to, references, prior art.
+    validations:
+      required: false
