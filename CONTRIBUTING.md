@@ -74,9 +74,16 @@ Both require a maintainer to run them, so ask in the pull request if you would l
 
 ### Code style
 
-- **Formatting** is handled by [air](https://posit-dev.github.io/air/). Every pull request is checked, and suggestions are posted inline. Please do not reformat code unrelated to your change.
-- **Documentation** uses [roxygen2](https://roxygen2.r-lib.org) with Markdown syntax. Edit the roxygen comments in `R/`, never the generated `.Rd` files in `man/`.
-- **Tests** use [testthat](https://testthat.r-lib.org). Contributions that come with tests are much easier to accept.
+We follow the [tidyverse style guide](https://style.tidyverse.org) — for code here, and for
+documentation in the next section.
+
+- **Formatting** is handled by [air](https://posit-dev.github.io/air/), which implements that guide,
+  so the two never disagree. Every pull request is checked and suggestions are posted inline. Please
+  do not reformat code unrelated to your change.
+- **Documentation** uses [roxygen2](https://roxygen2.r-lib.org) with Markdown syntax. Edit the
+  roxygen comments in `R/`, never the generated `.Rd` files in `man/`.
+- **Tests** use [testthat](https://testthat.r-lib.org). Contributions that come with tests are much
+  easier to accept.
 - **Before a substantial change lands**, it is worth running [goodpractice](https://docs.ropensci.org/goodpractice/) over the package:
 
   ```r
@@ -105,6 +112,52 @@ Both require a maintainer to run them, so ask in the pull request if you would l
   It runs `R CMD check`, lintr, cyclomatic complexity and coverage together, and reports things like print methods that don't return invisibly, unused internal functions, or untested code. Read it critically rather than treating every line as a defect — it flags `.onAttach` as uncalled, and counts roxygen comments as over-long lines. It is not part of CI for that reason.
 
 - Function naming follows the verb prefixes each package owns — `read_`, `filter_`, `calculate_`, `check_`, `plot_` and so on. Match the surrounding code.
+
+### Documentation style
+
+We follow the [tidyverse guide to documentation](https://style.tidyverse.org/documentation.html):
+titles in sentence case without a full stop, `@param` and `@return` written as sentences,
+cross-links in preference to code font, `@noRd` on internal functions, `@family` to group related
+ones. It is short, and it pairs with the code style above — air implements the same guide, so the
+formatter and the written rules cannot disagree.
+
+Everything below is what that guide does not cover.
+
+**Every exported function needs an example and a `@return`.** Examples are executed by
+`R CMD check`, so they are the part of the documentation that cannot quietly stop being true. Run
+them with `devtools::run_examples()`.
+
+**Document defaults in the parameter.** "A logical value (default `TRUE`) determining whether…"
+rather than leaving the reader to find it in the signature.
+
+**Examples take an aniframe from `example_aniframe()`**, at the smallest shape that makes the point:
+
+```r
+#' @examples
+#' af <- aniframe::example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)
+#' map_to_polar(af)
+```
+
+**Namespace that call.** Under `R CMD check` only the documented package is attached, so an
+unqualified `example_aniframe()` fails everywhere except in aniframe itself. For functions taking
+plain vectors or data frames, write the input inline.
+
+**`@return` should name what changed.** Nearly everything here returns an aniframe, so the type
+alone says little:
+
+```r
+#' @return An aniframe with `rho` and `phi` in place of `x` and `y`.
+```
+
+not "An aniframe" or "The transformed data".
+
+**Avoid `\dontrun{}`.** It hides the example from `R CMD check`, so it rots unnoticed. Reserve it
+for examples that genuinely cannot run there — network access, a file the user supplies, something
+interactive — and prefer `@examplesIf` where the condition can be tested.
+
+**Where documentation belongs.** Function reference lives with the code as roxygen comments.
+Tutorials spanning several packages live on [animovement.dev](https://animovement.dev) — see
+*Contributing documentation* below.
 
 ### Issues and pull requests
 
