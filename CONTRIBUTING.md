@@ -84,6 +84,24 @@ Both require a maintainer to run them, so ask in the pull request if you would l
   goodpractice::gp()          # from the package root
   ```
 
+  It includes lintr, and by default that means a lot of formatting complaints that air already
+  settles. To keep the useful checks without the noise:
+
+  ```r
+  formatting <- c(
+    "brace", "commas", "function_left_parentheses", "indentation", "infix_spaces",
+    "line_length", "paren_body", "pipe_consistency", "pipe_continuation", "quotes",
+    "semicolon", "spaces_inside", "spaces_left_parentheses", "trailing_blank_lines",
+    "trailing_whitespace", "whitespace"
+  )
+  noisy <- paste0("tidyverse_", formatting, "_linter")
+  goodpractice::gp(checks = setdiff(goodpractice::all_checks(), noisy))
+  ```
+
+  That drops 16 formatting checks and keeps the semantic ones — `tidyverse_seq_linter`, which
+  catches `1:length(x)` counting backwards on empty input, is worth the price of admission on
+  its own.
+
   It runs `R CMD check`, lintr, cyclomatic complexity and coverage together, and reports things like print methods that don't return invisibly, unused internal functions, or untested code. Read it critically rather than treating every line as a defect — it flags `.onAttach` as uncalled, and counts roxygen comments as over-long lines. It is not part of CI for that reason.
 
 - Function naming follows the verb prefixes each package owns — `read_`, `filter_`, `calculate_`, `check_`, `plot_` and so on. Match the surrounding code.
