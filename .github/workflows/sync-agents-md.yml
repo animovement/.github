@@ -47,9 +47,15 @@ jobs:
             rendered=$(sed -e "s|{{PACKAGE}}|$pkg|g" -e "s|{{ROLE}}|$role|g" agents/AGENTS.md.tmpl)
             new_b64=$(printf '%s' "$rendered" | base64 | tr -d '\n')
 
-            # Compare against what is already on the default branch.
-            cur_b64=$(gh api "repos/$repo/contents/AGENTS.md" --jq '.content' 2>/dev/null | tr -d '\n' || true)
-            if [ -n "$cur_b64" ] && [ "$(printf '%s' "$cur_b64" | base64 -d | shasum)" = "$(printf '%s' "$rendered" | shasum)" ]; then
+            # Compare against what is already on the default branch. `gh api`
+            # prints its error JSON to stdout on a 404, so rely on the exit
+            # status rather than on the output being empty.
+            if resp=$(gh api "repos/$repo/contents/AGENTS.md" 2>/dev/null); then
+              current=$(printf '%s' "$resp" | jq -r '.content // ""' | tr -d '\n' | base64 -d 2>/dev/null || true)
+            else
+              current=""
+            fi
+            if [ -n "$current" ] && [ "$current" = "$rendered" ]; then
               echo "already up to date"
               echo "::endgroup::"
               continue
