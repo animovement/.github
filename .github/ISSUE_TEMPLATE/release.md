@@ -10,6 +10,7 @@ Steps for cutting a release. The animovement packages are published on [R-univer
 ## Before
 
 - [ ] `devtools::check()` passes locally, and CI is green on `main`
+- [ ] The pkgdown site builds clean: `pkgdown::build_site()`, or at minimum the `pkgdown` workflow is green on `main`. Worth doing locally before a release, since a broken site is only noticed after it deploys
 - [ ] `goodpractice::gp()` reviewed, and anything real either fixed or filed as an issue
 - [ ] `devtools::test()` passes and coverage has not regressed
 - [ ] `NEWS.md` polished — every user-facing change since the last release has a bullet, written for users rather than as a commit log, with issue references
@@ -22,7 +23,17 @@ Bump the version in **every** place that carries it:
 - [ ] `CITATION.cff` — `version` and `date-released`
 - [ ] `inst/CITATION` — `version`, if the package has one
 - [ ] `NEWS.md` — the `# (development version)` heading becomes `# <package> <version>`
-- [ ] `README.md` — re-render from `README.qmd` if the version appears in it (the startup banner and the citation block both embed it)
+- [ ] `README.md` — re-render it. The version is embedded in the startup banner and the citation block, so it goes stale silently:
+
+  ```r
+  # packages with a README.qmd (animovement, aniframe)
+  quarto::quarto_render("README.qmd")     # or, in a terminal: quarto render README.qmd
+
+  # packages with a README.Rmd
+  devtools::build_readme()
+  ```
+
+  Re-install the package first (`devtools::install()`), otherwise the banner renders the *previously installed* version rather than the one you just bumped.
 
 ## Release
 
