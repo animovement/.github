@@ -27,7 +27,7 @@ You can use any tools that help you understand the codebase and write good code,
 
 6. **Run the tests.** `devtools::test()` locally, and read what CI reports on your pull request. Generated code that passes review by looking plausible is exactly the code that fails on real data.
 
-7. **Use the repository's templates.** When drafting an issue, a pull request or a release, fill in the template rather than writing free-form text over it. If you are directing an agent, tell it to do the same — the templates are in [`animovement/.github`](https://github.com/animovement/.github/tree/main/.github/ISSUE_TEMPLATE) and are what makes a report actionable.
+7. **Fill in the templates yourself.** Issue and pull request templates ask for the things that make a report actionable — a reproducible example, the reasoning behind a change. Replacing a template with generated prose is worse than leaving it blank, because it looks complete without being so.
 
 ## Using AI for communication
 
