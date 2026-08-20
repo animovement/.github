@@ -11,6 +11,8 @@ Check the issue tracker to see whether an issue already describes what you have 
 - If it does, comment to say you would like to work on it.
 - If it does not, open one describing your idea.
 
+If you use AI tools while contributing, please read the [AI use policy and guidelines](https://github.com/animovement/.github/blob/main/AI.md) first. Short version: use whatever tools you like, but understand and test what you submit, and talk to us yourself.
+
 We strongly encourage discussing your plans before writing code — in the issue, or on our [Zulip chat](https://animovement.zulipchat.com). This avoids duplicated effort and makes sure the work fits where the project is going. If you are not sure whether an issue is ready to be worked on, just ask.
 
 ### Which repository?
