@@ -74,9 +74,16 @@ Both require a maintainer to run them, so ask in the pull request if you would l
 
 ### Code style
 
-- **Formatting** is handled by [air](https://posit-dev.github.io/air/). Every pull request is checked, and suggestions are posted inline. Please do not reformat code unrelated to your change.
-- **Documentation** uses [roxygen2](https://roxygen2.r-lib.org) with Markdown syntax. Edit the roxygen comments in `R/`, never the generated `.Rd` files in `man/`.
-- **Tests** use [testthat](https://testthat.r-lib.org). Contributions that come with tests are much easier to accept.
+We follow the [tidyverse style guide](https://style.tidyverse.org) — for code here, and for
+documentation in the next section.
+
+- **Formatting** is handled by [air](https://posit-dev.github.io/air/), which implements that guide,
+  so the two never disagree. Every pull request is checked and suggestions are posted inline. Please
+  do not reformat code unrelated to your change.
+- **Documentation** uses [roxygen2](https://roxygen2.r-lib.org) with Markdown syntax. Edit the
+  roxygen comments in `R/`, never the generated `.Rd` files in `man/`.
+- **Tests** use [testthat](https://testthat.r-lib.org). Contributions that come with tests are much
+  easier to accept.
 - **Before a substantial change lands**, it is worth running [goodpractice](https://docs.ropensci.org/goodpractice/) over the package:
 
   ```r
@@ -106,90 +113,47 @@ Both require a maintainer to run them, so ask in the pull request if you would l
 
 - Function naming follows the verb prefixes each package owns — `read_`, `filter_`, `calculate_`, `check_`, `plot_` and so on. Match the surrounding code.
 
-### Writing function documentation
+### Documentation style
 
-Documentation is written with [roxygen2](https://roxygen2.r-lib.org), and pkgdown regenerates
-`reference/<function>.md` and `llms.txt` from it — so one block serves the help page, the website,
-and any coding assistant reading the published docs.
+Two established guides, rather than a house style of our own:
 
-We follow the [tidyverse style guide for documentation](https://style.tidyverse.org/documentation.html)
-and the [rOpenSci packaging guide](https://devguide.ropensci.org/pkg_building.html#documentation).
-The rules below are the parts that come up most; where this section is silent, those are the
-reference.
+- the [tidyverse guide to documentation](https://style.tidyverse.org/documentation.html) — titles,
+  `@param` and `@return` phrasing, cross-linking, when to use `@noRd` and `@family`
+- the [rOpenSci packaging guide](https://devguide.ropensci.org/pkg_building.html#documentation) —
+  examples on every exported function, `@return` always present, defaults documented explicitly
 
-**Title and description**
+animovement is in [pre-submission to rOpenSci](https://github.com/animovement/animovement/issues/92),
+so their guide is what these packages will be reviewed against.
 
-- The first line is the title: one line, sentence case, **no full stop**. Say what the function does
-  — "Map from Cartesian to polar coordinates".
-- A description is a separate paragraph after a blank line. Omit it if the title already says it;
-  roxygen reuses the title. You only need an explicit `@description` tag when it runs to several
-  paragraphs or contains a bulleted list.
+Read those first. What follows is only what they cannot know about this suite.
 
-**Arguments and return**
+**Examples take an aniframe from `example_aniframe()`**
 
-- `@param`, `@return` and `@seealso` text is a **sentence**: capital letter, full stop. This holds
-  even for a few words.
-- **Document defaults explicitly.** rOpenSci asks for "A logical value (default `TRUE`) determining
-  whether…" rather than "A logical value determining whether…".
-- **`@return` is required on every exported function**, and should say what type comes back. For
-  this suite, name what changed: "An aniframe with `rho` and `phi` in place of `x` and `y`" is worth
-  far more than "The transformed data".
-- Use `@inheritParams` rather than repeating a shared argument. Divergent copies of the same
-  `@param` are how documentation starts to lie.
+```r
+#' @examples
+#' af <- aniframe::example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)
+#' map_to_polar(af)
+```
 
-**Formatting**
+Use the smallest shape that makes the point, and **namespace the call**: under `R CMD check` only
+the documented package is attached, so an unqualified `example_aniframe()` fails everywhere except
+in aniframe itself. For functions taking plain vectors or data frames, write the input inline.
 
-- One space after `#'`. Text continuing onto another line gets two extra spaces of indent, unless
-  the tag sits on its own line (as with `@examples`).
-- Backtick anything that is R code: argument names, values (`TRUE`, `NA`, `NULL`), literal calls,
-  and class names.
-- For functions, prefer a cross-link `[map_to_polar()]` over code font — it is navigable. Link the
-  first mention in a topic; repeats can be plain.
-- **Do not put package names in code font**, and do not capitalise them at the start of a sentence:
-  "aniframe provides the core data structures", not "`aniframe` provides…" or "Aniframe provides…".
-- Group related functions with `@family`, so `@seealso` sections generate themselves.
-- Document internal functions the same way, with `@noRd` instead of `@export`, so no `.Rd` file is
-  generated.
+**`@return` should name what changed**
 
-**Length.** Be brief in the description and generous in the parameters. A padded description is
-harder to use than a one-line one, so avoid opening with "This function", restating the function's
-name in prose, hedging ("can be used to"), and closing summaries that repeat what was already said.
+rOpenSci asks for the type returned. For a suite built on one data structure, the type alone says
+little — nearly everything returns an aniframe. Say what is different about it:
 
-### Writing examples
+```r
+#' @return An aniframe with `rho` and `phi` in place of `x` and `y`.
+```
 
-Every exported function should have a runnable example. `R CMD check` executes them, so an example
-that stops working fails CI — which is why they are worth more than prose. Run them locally with
-`devtools::run_examples()`.
+not "An aniframe" or "The transformed data".
 
-- **Cover the useful cases, not just one.** Established practice here is thorough rather than
-  minimal — dplyr's `slice()` examples run to twenty lines because `slice()` has that many variants
-  worth showing. The test is whether each line demonstrates something the previous ones did not,
-  not whether the block is short.
-- **Comments are welcome when they earn their place.** A comment that contrasts behaviours or gives
-  the reason for an argument is useful; one that restates the call underneath it is noise:
+**Where documentation belongs**
 
-  ```r
-  # Good — says something the code does not
-  # Rows can be dropped with negative indices:
-  slice(mtcars, -(1:4))
-
-  # Bad — restates the call
-  # Slice the first row
-  slice(mtcars, 1)
-  ```
-
-- **Use `aniframe::example_aniframe()`** for anything taking an aniframe, at the smallest shape that
-  makes the point: `example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)` is a complete,
-  valid frame. **Namespace it** — under `R CMD check` only the documented package is attached, so an
-  unqualified call fails everywhere except aniframe itself. For plain vectors or data frames, write
-  the input inline.
-- **The pipe is fine**, and often reads better for a sequence of operations, as it does in dplyr.
-- **Prefer a realistic call.** Arguments chosen so the example runs, rather than to show the
-  function doing its job, teach nothing. Where a value carries the meaning — a filter cutoff, an
-  outlier threshold — choose one that visibly changes the result.
-- **Avoid `\dontrun{}`.** It hides the example from `R CMD check`, so it rots unnoticed. Reserve it
-  for examples that genuinely cannot run there — network access, a file the user supplies,
-  something interactive — and prefer `@examplesIf` where the condition can be tested.
+Function reference lives with the code as roxygen comments. Tutorials spanning several packages
+live on [animovement.dev](https://animovement.dev) — see *Contributing documentation* below.
 
 ### Issues and pull requests
 
