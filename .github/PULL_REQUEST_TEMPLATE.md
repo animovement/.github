@@ -4,7 +4,7 @@ Fill in as much of this as you can. If anything is unclear, leave a comment and 
 
 ## Description
 
-**What is this PR**
+### What kind of change is this?
 
 - [ ] Bug fix
 - [ ] Addition of a new feature
@@ -12,9 +12,9 @@ Fill in as much of this as you can. If anything is unclear, leave a comment and 
 - [ ] Maintenance (CI, dependencies, refactoring)
 - [ ] Other
 
-**Why is this PR needed?**
+### Why is it needed?
 
-**What does this PR do?**
+### What does it do?
 
 ## References
 
