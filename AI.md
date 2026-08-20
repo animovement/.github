@@ -24,7 +24,7 @@ You can use any tools that help you understand the codebase and write good code,
    - `https://animovement.dev/<package>/llms.txt` — the README, then a complete index of every exported function, grouped by purpose with a one-line description of each, then the articles. A good place to start when you need to know what a package offers.
    - `https://animovement.dev/<package>/reference/<function>.md` — the full help page for one function, including its exact signature.
 
-   For example, [aniframe's llms.txt](https://animovement.dev/aniframe/llms.txt) and [`as_aniframe()`](https://animovement.dev/aniframe/reference/as_aniframe.md). These are generated from the roxygen comments in the source, so unlike a model's recollection they cannot drift from the installed package. Checking a signature there takes seconds and settles the question.
+   These are generated from the roxygen comments in the source, so unlike a model's recollection they cannot drift from the installed package. Checking a signature there takes seconds and settles the question.
 
    What they do not give you is the shape of the ecosystem — which of the eight packages owns a given job, or how we work across them. Where a repository has an `AGENTS.md`, that is the entry point for that, and [animovement-agents](https://github.com/animovement/animovement-agents) holds the ecosystem map itself: which package owns what, the aniframe data model, and the naming conventions.
 
