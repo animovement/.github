@@ -26,7 +26,6 @@ body:
       description: |
         If you have a sense of what the function or argument might look like, sketching the call
         helps — it does not have to be right.
-      render: r
     validations:
       required: true
 
