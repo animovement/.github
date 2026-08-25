@@ -1,6 +1,6 @@
-Before submitting a pull request, please read the [contributing guide](https://github.com/animovement/.github/blob/main/CONTRIBUTING.md), and — if you used AI tools — the [AI use policy](https://github.com/animovement/.github/blob/main/AI.md).
+<!-- Before submitting a pull request, please read the [contributing guide](https://github.com/animovement/.github/blob/main/CONTRIBUTING.md), and — if you used AI tools — the [AI use policy](https://github.com/animovement/.github/blob/main/AI.md).
 
-Fill in as much of this as you can. If anything is unclear, leave a comment and we will help out — an incomplete pull request is much better than none.
+Fill in as much of this as you can. If anything is unclear, leave a comment and we will help out — an incomplete pull request is much better than none. -->
 
 ## Description
 
@@ -18,19 +18,19 @@ Fill in as much of this as you can. If anything is unclear, leave a comment and 
 
 ## References
 
-Any related issues or pull requests. If this closes an issue, write `Fixes #issue-number` so it closes automatically.
+<!-- Any related issues or pull requests. If this closes an issue, write `Fixes #issue-number` so it closes automatically. -->
 
 ## How has this PR been tested?
 
-How you checked the new code works, and that existing behaviour is unchanged.
+<!-- How you checked the new code works, and that existing behaviour is unchanged. -->
 
 ## Is this a breaking change?
 
-If this changes existing behaviour, please explain what breaks and why the change is worth it.
+<!-- If this changes existing behaviour, please explain what breaks and why the change is worth it. -->
 
 ## Does this PR require a documentation update?
 
-Function documentation lives with the code as roxygen comments. Tutorials that span packages live on [animovement.dev](https://animovement.dev) rather than in this repository.
+<!-- Function documentation lives with the code as roxygen comments. Tutorials that span packages live on [animovement.dev](https://animovement.dev) rather than in this repository. -->
 
 ## Checklist
 
