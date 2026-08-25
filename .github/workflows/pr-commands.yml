@@ -44,7 +44,7 @@ jobs:
           git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
           git add man/\* NAMESPACE
           # Nothing to document is a normal outcome, not a failure.
-          git commit -m 'Document' || echo "No documentation changes"
+          git commit -m 'docs: regenerate man/ and NAMESPACE' || echo "No documentation changes"
 
       - uses: r-lib/actions/pr-push@v2
         with:
@@ -79,7 +79,7 @@ jobs:
           git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
           git add \*.R
           # Already-formatted code is a normal outcome, not a failure.
-          git commit -m 'Style' || echo "No formatting changes"
+          git commit -m 'chore: reformat with air' || echo "No formatting changes"
 
       - uses: r-lib/actions/pr-push@v2
         with:

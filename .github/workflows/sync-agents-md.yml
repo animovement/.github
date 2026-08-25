@@ -75,17 +75,17 @@ jobs:
             file_sha=$(gh api "repos/$repo/contents/AGENTS.md?ref=$branch" --jq '.sha' 2>/dev/null || true)
             if [ -n "$file_sha" ] && [ "$file_sha" != "null" ]; then
               gh api -X PUT "repos/$repo/contents/AGENTS.md" \
-                -f message="Sync AGENTS.md from animovement/.github" \
+                -f message="docs: sync AGENTS.md from animovement/.github" \
                 -f content="$new_b64" -f branch="$branch" -f sha="$file_sha" >/dev/null
             else
               gh api -X PUT "repos/$repo/contents/AGENTS.md" \
-                -f message="Sync AGENTS.md from animovement/.github" \
+                -f message="docs: sync AGENTS.md from animovement/.github" \
                 -f content="$new_b64" -f branch="$branch" >/dev/null
             fi
 
             if [ -z "$(gh pr list -R "$repo" --head "$branch" --state open --json number --jq '.[0].number')" ]; then
               gh pr create -R "$repo" --base main --head "$branch" \
-                --title "Sync AGENTS.md" \
+                --title "docs: sync AGENTS.md" \
                 --body "$(printf '%s\n' \
                   "Generated from \`agents/AGENTS.md.tmpl\` in [animovement/.github](https://github.com/animovement/.github), so every package carries the same guidance for coding agents." \
                   "" \
