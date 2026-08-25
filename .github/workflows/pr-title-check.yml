@@ -1,5 +1,10 @@
-# Checks this repository's own pull request titles against the shared workflow
-# next to it. Package repositories carry the same stub; see CONTRIBUTING.md.
+# Checks this repository's own pull request titles. The reusable workflow it calls
+# lives next to it, so this references it by path rather than by `owner/repo@main`
+# — a local reference resolves at the pull request's own ref, which means a change
+# to the check is exercised by the pull request that makes it.
+#
+# Package repositories cannot do this: their stub must call
+# animovement/.github/.github/workflows/pr-title.yml@main. See CONTRIBUTING.md.
 name: pr-title-check
 
 on:
@@ -8,4 +13,4 @@ on:
 
 jobs:
   pr-title:
-    uses: animovement/.github/.github/workflows/pr-title.yml@main
+    uses: ./.github/workflows/pr-title.yml
