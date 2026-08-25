@@ -1,0 +1,11 @@
+# Checks this repository's own pull request titles against the shared workflow
+# next to it. Package repositories carry the same stub; see CONTRIBUTING.md.
+name: pr-title-check
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  pr-title:
+    uses: animovement/.github/.github/workflows/pr-title.yml@main
