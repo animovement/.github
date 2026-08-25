@@ -26,26 +26,45 @@ map="
 CONTRIBUTING.md|contributing.md|CONTRIBUTING.md
 AI.md|ai-policy.md|AI.md
 .github/ISSUE_TEMPLATE/release.md|release-checklist.md|.github/ISSUE_TEMPLATE/release.md
+.github/PULL_REQUEST_TEMPLATE.md|pull-request-template.md|.github/PULL_REQUEST_TEMPLATE.md
 "
 
-# Build the vendored copy of one file: strip any YAML frontmatter (the release
-# checklist is an issue template and carries some), then prepend provenance.
+# Provenance block. Every vendored file carries one, so a copy that has fallen
+# behind its source identifies itself instead of being quietly trusted.
+header() {
+  local origin="$1"
+  printf '%s\n' \
+    "<!--" \
+    "  Generated from $origin in animovement/.github — do not edit here." \
+    "  Edit it there; the Sync agent docs workflow opens a pull request with the change." \
+    "" \
+    "  Source: https://github.com/animovement/.github/blob/main/$origin" \
+    "  Commit: $sha" \
+    "  Synced: $today" \
+    "" \
+    "  This copy can lag its source. If a detail matters, check the URL above." \
+    "-->" \
+    ""
+}
+
+# A straight copy: strip any YAML frontmatter (the release checklist is an issue
+# template and carries some), then prepend provenance.
 render() {
   local src="$1" origin="$2"
   awk 'NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {fm=0; next} !fm' "$src" |
     sed '/./,$!d' |
-    cat <(printf '%s\n' \
-      "<!--" \
-      "  Generated from $origin in animovement/.github — do not edit here." \
-      "  Edit it there; the Sync agent docs workflow opens a pull request with the change." \
-      "" \
-      "  Source: https://github.com/animovement/.github/blob/main/$origin" \
-      "  Commit: $sha" \
-      "  Synced: $today" \
-      "" \
-      "  This copy can lag its source. If a detail matters, check the URL above." \
-      "-->" \
-      "") -
+    cat <(header "$origin") -
+}
+
+# The bug and feature templates are GitHub issue *forms*: YAML that applies only in
+# the web UI, and that cannot be passed to `gh issue create --body`. Rendering them
+# to a markdown skeleton is the only way an agent opening an issue through the API
+# can reproduce the fields.
+render_issue_forms() {
+  ./agents/render-issue-forms.rb \
+    .github/ISSUE_TEMPLATE/bug_report.yml \
+    .github/ISSUE_TEMPLATE/feature_request.yml |
+    cat <(header ".github/ISSUE_TEMPLATE/{bug_report,feature_request}.yml") -
 }
 
 declare -a paths=() contents=()
@@ -70,6 +89,20 @@ while IFS='|' read -r src name origin; do
   paths+=("$target")
   contents+=("$rendered")
 done <<<"$map"
+
+# Same staleness comparison for the generated file, which has no single source.
+rendered=$(render_issue_forms)
+target="$dest/issue-templates.md"
+current=$(gh api "repos/$repo/contents/$target" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
+strip() { sed '1{/^<!--$/,/^-->$/d}' | sed '/./,$!d'; }
+if [ -n "$current" ] && [ "$(printf '%s' "$current" | strip)" = "$(printf '%s' "$rendered" | strip)" ]; then
+  echo "unchanged: $target"
+else
+  echo "would update: $target"
+  changed=$((changed + 1))
+  paths+=("$target")
+  contents+=("$rendered")
+fi
 
 if [ "$changed" -eq 0 ]; then
   echo "everything up to date"

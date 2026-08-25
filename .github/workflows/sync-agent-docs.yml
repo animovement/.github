@@ -21,7 +21,11 @@ on:
       - "CONTRIBUTING.md"
       - "AI.md"
       - ".github/ISSUE_TEMPLATE/release.md"
+      - ".github/ISSUE_TEMPLATE/bug_report.yml"
+      - ".github/ISSUE_TEMPLATE/feature_request.yml"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
       - "agents/sync-agent-docs.sh"
+      - "agents/render-issue-forms.rb"
   # Safety net: a push-triggered run that failed transiently would otherwise
   # leave the copies stale until the next edit, which may be months away.
   schedule:
