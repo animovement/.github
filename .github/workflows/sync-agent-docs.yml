@@ -1,0 +1,49 @@
+# Vendors CONTRIBUTING.md, AI.md and the release checklist into
+# animovement-agents, beside the animovement-dev skill, and opens a pull request
+# there when they change. An agent can then read them as files; many cannot fetch
+# a URL, and those that can will often skip it.
+#
+# Needs a token that can write to the other repository: GITHUB_TOKEN is scoped to
+# this one. Same token as the AGENTS.md sync; see agents/README.md.
+name: Sync agent docs
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report what would change without opening a pull request"
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches: [main]
+    paths:
+      - "CONTRIBUTING.md"
+      - "AI.md"
+      - ".github/ISSUE_TEMPLATE/release.md"
+      - "agents/sync-agent-docs.sh"
+  # Safety net: a push-triggered run that failed transiently would otherwise
+  # leave the copies stale until the next edit, which may be months away.
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync
+        env:
+          GH_TOKEN: ${{ secrets.AGENTS_SYNC_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::AGENTS_SYNC_TOKEN is not set. See agents/README.md."
+            exit 1
+          fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ./agents/sync-agent-docs.sh --dry-run
+          else
+            ./agents/sync-agent-docs.sh
+          fi
