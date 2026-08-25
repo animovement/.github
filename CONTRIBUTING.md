@@ -63,6 +63,40 @@ Please submit changes as a pull request against `main`.
 
 Every pull request runs `R CMD check` on Linux, macOS and Windows, builds the pkgdown site, reports test coverage, and checks formatting. All of these must pass before merging.
 
+### Commit messages
+
+We follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), so that release notes can be drafted from the history and version bumps follow from what actually changed.
+
+```
+<type>(<optional scope>): <description>
+```
+
+The types we use:
+
+| Type | Use for | Version effect |
+|---|---|---|
+| `feat` | A new user-facing capability — an exported function, a new argument | Minor |
+| `fix` | A bug fix in behaviour a user could hit | Patch |
+| `docs` | Roxygen comments, vignettes, README, this guide | None |
+| `perf` | A change that makes existing behaviour faster | Patch |
+| `refactor` | Internal restructuring with no change in behaviour | None |
+| `test` | Adding or correcting tests | None |
+| `build` | `DESCRIPTION`, dependencies, packaging | None |
+| `ci` | Workflows and their stubs | None |
+| `chore` | Anything else that touches no user-facing behaviour | None |
+| `revert` | Undoing an earlier commit | Matches what it undoes |
+
+A **breaking change** — a removed or renamed export, a changed default, a different return type — takes a `!` before the colon (`feat(aniframe)!: …`) and a `BREAKING CHANGE:` footer explaining the migration. Those are the ones that force a major bump, so they are worth spelling out.
+
+The scope is optional and is normally the package name (`fix(aniread): …`), or the area within a package when that is more useful (`fix(read_sleap): …`).
+
+- Write the description in the imperative — *add*, not *added* or *adds* — and lower-case, with no trailing full stop.
+- Describe the change, not the file: `fix(aniprocess): keep metadata through filter_kalman()` rather than `fix: update filter-kalman.R`.
+
+**The pull request title must follow the same format**, and matters more than the individual commits: merges here squash, so the title becomes the commit that lands on `main`. A workflow checks it, and will tell you what is wrong. Commits within a branch are squashed away, so tidy them if you like, but do not agonise over them.
+
+`NEWS.md` is still written by hand, for users, in the [tidyverse style](https://style.tidyverse.org/news.html) — the commit history drafts release notes, it does not replace them.
+
 ### Two commands that save round trips
 
 Comment on your pull request and a maintainer-triggered workflow will fix things for you:

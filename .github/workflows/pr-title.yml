@@ -1,0 +1,50 @@
+# Reusable workflow: check that a pull request title follows Conventional Commits.
+#
+# Merges squash, so the pull request title becomes the commit that lands on main —
+# which is the commit release notes are drafted from. Individual commits within a
+# branch are squashed away and are not checked.
+#
+# Called by a stub in each repository. See CONTRIBUTING.md for the types.
+name: pr-title
+
+on:
+  workflow_call:
+
+jobs:
+  pr-title:
+    name: pr-title
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+
+          # type(optional scope)optional !: description
+          pattern='^(feat|fix|docs|perf|refactor|test|build|ci|chore|revert)(\([a-z0-9._-]+\))?!?: .+'
+
+          if printf '%s' "$TITLE" | grep -Eq "$pattern"; then
+            echo "✔ $TITLE"
+            exit 0
+          fi
+
+          cat >&2 <<EOF
+          ✘ The pull request title is not a Conventional Commit.
+
+              $TITLE
+
+          Expected: <type>(<optional scope>): <description>
+
+              feat(aniread): add read_octron()
+              fix(aniprocess): keep metadata through filter_kalman()
+              docs: explain the aniframe grouping rules
+              feat(aniframe)!: drop the deprecated dimension argument
+
+          Types: feat fix docs perf refactor test build ci chore revert
+          A breaking change takes a ! before the colon.
+
+          https://github.com/animovement/.github/blob/main/CONTRIBUTING.md#commit-messages
+          EOF
+          exit 1
