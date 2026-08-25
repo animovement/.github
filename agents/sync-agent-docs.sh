@@ -29,6 +29,18 @@ AI.md|ai-policy.md|AI.md
 .github/PULL_REQUEST_TEMPLATE.md|pull-request-template.md|.github/PULL_REQUEST_TEMPLATE.md
 "
 
+# Strip the leading provenance block for comparison, so a run where nothing has
+# actually changed does not churn a pull request just because the date moved.
+#
+# Only the block at the very start of the file: PULL_REQUEST_TEMPLATE.md carries
+# six HTML comments of its own, and removing those would hide a change to the
+# template's guidance from this comparison. `sed '1{...}'` is not portable — BSD
+# sed rejects it, and a silently empty result would make every file compare equal.
+strip_provenance() {
+  awk 'NR==1 && $0=="<!--" {inh=1; next} inh && $0=="-->" {inh=0; next} !inh' |
+    sed '/./,$!d'
+}
+
 # Provenance block. Every vendored file carries one, so a copy that has fallen
 # behind its source identifies itself instead of being quietly trusted.
 header() {
@@ -78,8 +90,7 @@ while IFS='|' read -r src name origin; do
   # Compare ignoring the provenance block, so an unchanged document does not
   # churn a pull request every time this runs.
   current=$(gh api "repos/$repo/contents/$target" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
-  strip() { sed '1{/^<!--$/,/^-->$/d}' | sed '/./,$!d'; }
-  if [ -n "$current" ] && [ "$(printf '%s' "$current" | strip)" = "$(printf '%s' "$rendered" | strip)" ]; then
+  if [ -n "$current" ] && [ "$(printf '%s' "$current" | strip_provenance)" = "$(printf '%s' "$rendered" | strip_provenance)" ]; then
     echo "unchanged: $target"
     continue
   fi
@@ -94,8 +105,7 @@ done <<<"$map"
 rendered=$(render_issue_forms)
 target="$dest/issue-templates.md"
 current=$(gh api "repos/$repo/contents/$target" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
-strip() { sed '1{/^<!--$/,/^-->$/d}' | sed '/./,$!d'; }
-if [ -n "$current" ] && [ "$(printf '%s' "$current" | strip)" = "$(printf '%s' "$rendered" | strip)" ]; then
+if [ -n "$current" ] && [ "$(printf '%s' "$current" | strip_provenance)" = "$(printf '%s' "$rendered" | strip_provenance)" ]; then
   echo "unchanged: $target"
 else
   echo "would update: $target"
