@@ -268,7 +268,8 @@ filter_across <- function(data, ...) {
 
 That line is the whole mechanism. It tells you the benchmark exists before you
 edit the function, rather than after someone reports a slowdown. `grep -rn
-"# Benchmark:" R/` lists what is covered.
+"# Benchmark:" R/` lists what is covered. One script can cover several related
+functions — mark each of them, pointing at the same file.
 
 #### Writing one
 
@@ -289,7 +290,7 @@ results <- bench::press(
       n_keypoints = 1
     )
     bench::mark(
-      rollmean = filter_across(af, "rollmean", window = 11),
+      rollmean = filter_across(af, "rollmean", window_width = 11),
       excursion = filter_na_across(af, "excursion"),
       check = FALSE,
       min_iterations = 3
@@ -317,8 +318,8 @@ above says something useful precisely because it sweeps both:
 | excursion | 250 | 500 | 216.6ms |
 
 `filter_across()` with `"rollmean"` barely notices five times the rows — its cost
-is per group. `"excursion"` pays for both. A one-size benchmark would have
-reported one of those numbers and told you neither thing.
+is per group. `filter_na_across()` with `"excursion"` pays for both. A one-size
+benchmark would have reported one of those numbers and told you neither thing.
 
 Keep it under a minute. `min_iterations = 3` and a top size that still finishes
 quickly is enough; a benchmark nobody waits for is a benchmark nobody runs. Set
