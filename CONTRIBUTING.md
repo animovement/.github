@@ -246,7 +246,7 @@ For those, a package keeps a `bench/` directory of plain R scripts:
 
 ```
 bench/
-  filter_across.R
+  filter_rollmean.R
   filter_ccma.R
 ```
 
@@ -254,16 +254,25 @@ bench/
 `DESCRIPTION`, so it is invisible to `R CMD check` and adds no dependency. It is
 a developer tool, not part of the package.
 
+**Time the function that does the work, not the wrapper.** `filter_across()` and
+`filter_na_across()` dispatch to the filters within the frame's grouping, so
+timing them measures dplyr's grouping machinery as much as the filter, and a
+regression in either one looks the same from outside. Benchmark
+`filter_rollmean()`, `filter_ccma()`, `filter_na_excursion()` — the functions
+that hold the algorithm. They take a vector or a plain data frame, which also
+makes the input cheap to construct and the numbers easy to reason about.
+
 **Benchmarks are run by hand, when you touch the function.** There is no CI job.
 These functions change rarely, so a benchmark on every pull request would cost
 more than it caught. What makes that work is a marker comment in `R/`, directly
 above the function and below its roxygen block:
 
 ```r
-#' @return An aniframe with the spatial columns smoothed.
+#' @return Filtered numeric vector, same length as `x`.
 #' @export
-# Benchmark: bench/filter_across.R
-filter_across <- function(data, ...) {
+# Benchmark: bench/filter_rollmean.R
+filter_rollmean <- function(x, window_width = 5, min_obs = 1,
+                            align = c("right", "left", "center"), keep_na = TRUE) {
 ```
 
 That line is the whole mechanism. It tells you the benchmark exists before you
@@ -277,53 +286,61 @@ Use [bench](https://bench.r-lib.org). `bench::press()` sweeps the parameters,
 `bench::mark()` times the expressions inside each combination:
 
 ```r
-# bench/filter_across.R — run with: Rscript bench/filter_across.R
+# bench/filter_rollmean.R — run with: Rscript bench/filter_rollmean.R
 devtools::load_all(quiet = TRUE)
+set.seed(1)
 
 results <- bench::press(
-  n_individuals = c(10, 50, 250),
-  n_obs = c(100, 500),
+  n = c(1e4, 5e4),
+  window_width = c(11, 51, 251),
   {
-    af <- aniframe::example_aniframe(
-      n_obs = n_obs,
-      n_individuals = n_individuals,
-      n_keypoints = 1
-    )
+    x <- cumsum(rnorm(n))
     bench::mark(
-      rollmean = filter_across(af, "rollmean", window_width = 11),
-      excursion = filter_na_across(af, "excursion"),
+      rollmean = filter_rollmean(x, window_width = window_width),
+      gaussian = filter_gaussian(x, window_width = window_width, sigma = window_width / 6),
       check = FALSE,
       min_iterations = 3
     )
   }
 )
 
-print(results[c("expression", "n_individuals", "n_obs", "median", "mem_alloc")], n = Inf)
+print(results[c("expression", "n", "window_width", "median", "mem_alloc")], n = Inf)
 ```
 
-**Vary size, not just settings.** Sweeping two sizes is what separates "this got
-slower" from "this got slower *the bigger it gets*", and the second is the one
-that ruins someone's afternoon. For movement data the two axes are almost always
-**number of tracks** (individuals × keypoints) and **trajectory length** (rows
-per track); a function can be linear in one and quadratic in the other. The run
-above says something useful precisely because it sweeps both:
+**Sweep size on every axis the algorithm has**, not just one. Sweeping two is
+what separates "this got slower" from "this got slower *the bigger it gets*",
+and the second is the one that ruins someone's afternoon. For a filter the axes
+are **trajectory length** and, for anything windowed, **window width** — a
+function can be linear in one and not the other. That is not hypothetical:
 
-| expression | individuals | rows | median |
-|---|---|---|---|
-| rollmean | 10 | 100 | 9.8ms |
-| rollmean | 250 | 100 | 88.9ms |
-| rollmean | 10 | 500 | 11.1ms |
-| rollmean | 250 | 500 | 94.2ms |
-| excursion | 10 | 500 | 16.8ms |
-| excursion | 250 | 500 | 216.6ms |
+```
+   expression     n window_width   median mem_alloc
+ 1 rollmean   10000           11 387.03µs  624.93KB
+ 2 gaussian   10000           11  12.08ms   13.82MB
+ 3 rollmean   50000           11   1.69ms    2.31MB
+ 4 gaussian   50000           11  61.88ms   68.87MB
+ 5 rollmean   10000           51 410.75µs  485.07KB
+ 6 gaussian   10000           51  65.25ms   62.63MB
+ 7 rollmean   50000           51   1.63ms    2.31MB
+ 8 gaussian   50000           51 277.46ms  313.02MB
+ 9 rollmean   10000          251 402.77µs  484.29KB
+10 gaussian   10000          251 330.74ms  306.11MB
+11 rollmean   50000          251   1.61ms     2.3MB
+12 gaussian   50000          251    1.38s     1.5GB
+```
 
-`filter_across()` with `"rollmean"` barely notices five times the rows — its cost
-is per group. `filter_na_across()` with `"excursion"` pays for both. A one-size
-benchmark would have reported one of those numbers and told you neither thing.
+`filter_rollmean()` does not care about the window at all — 1.69ms, 1.63ms,
+1.61ms across a 23-fold range of it — because [data.table's
+`frollmean()`](https://rdrr.io/pkg/data.table/man/froll.html) underneath is
+linear in `n` whatever the window. `filter_gaussian()` pays for both, and pays
+in memory hardest: 1.5GB at the top corner against rollmean's 2.3MB. A sweep of
+`n` alone, at one window width, reports a single ratio and tells you neither
+thing.
 
-Keep it under a minute. `min_iterations = 3` and a top size that still finishes
-quickly is enough; a benchmark nobody waits for is a benchmark nobody runs. Set
-`check = FALSE` when the expressions return different things.
+Keep it under a minute — the sweep above takes about 15 seconds. `min_iterations
+= 3` and a top size that still finishes quickly is enough; a benchmark nobody
+waits for is a benchmark nobody runs. Set `check = FALSE` when the expressions
+return different things.
 
 #### Reporting one
 
@@ -336,15 +353,8 @@ If the change is user-visible, the headline number belongs in `NEWS.md` too. A
 deliberate slowdown is fine and sometimes correct — say so and say why, because
 an accidental one of the same size looks identical from the outside.
 
-**Timing assertions do not belong in `tests/`.** A test like
-
-```r
-expect_true(time["elapsed"] < 1)
-```
-
-measures the CI runner as much as the code: it fails for reasons unrelated to
-your change, and a 3× slowdown that still comes in under a second passes
-silently. Move it to `bench/`.
+Benchmarks live in `bench/`, not in `tests/`: a wall-clock assertion in testthat
+measures the runner as much as the code.
 
 ### Documentation style
 
