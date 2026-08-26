@@ -124,6 +124,14 @@ if [ "$dry_run" = true ]; then
   exit 0
 fi
 
+# animovement-agents is public and is not one of the eight packages, so a token
+# scoped to those alone reads everything above without complaint and then fails
+# on the first blob with a bare 403. Say what to fix instead.
+if [ "$(gh api "repos/$repo" --jq '.permissions.push // false' 2>/dev/null)" != "true" ]; then
+  echo "::error::GH_TOKEN cannot write to $repo. Add that repository to the token's access, with Contents and Pull requests write. See agents/README.md."
+  exit 1
+fi
+
 base_sha=$(gh api "repos/$repo/git/ref/heads/main" --jq '.object.sha')
 base_tree=$(gh api "repos/$repo/git/commits/$base_sha" --jq '.tree.sha')
 

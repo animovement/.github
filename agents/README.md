@@ -5,12 +5,17 @@ for it in the repository they are working in. It has to be a real file in each p
 GitHub's organisation-wide inheritance only affects what the website renders, so an inherited file
 is **not** present in a clone and an agent never sees it.
 
-This directory keeps one authored copy so the eight are not maintained separately.
+This directory keeps one authored copy so the eight are not maintained separately. It also holds
+the sync that vendors the canonical contributor documents into
+[animovement-agents](https://github.com/animovement/animovement-agents), where an agent can read
+them as files.
 
 | File | Purpose |
 | --- | --- |
 | `AGENTS.md.tmpl` | The template. `{{PACKAGE}}` and `{{ROLE}}` are substituted per package. |
 | `packages.tsv` | The packages, tab-separated: name, then the role that fills `{{ROLE}}`. |
+| `sync-agent-docs.sh` | Vendors `CONTRIBUTING.md`, `AI.md` and the templates into `animovement-agents`. |
+| `render-issue-forms.rb` | Renders the issue *forms* to markdown, since their YAML cannot be a body. |
 
 Adding a package to the suite means adding one line to `packages.tsv`.
 
@@ -39,8 +44,11 @@ repositories. The workflow needs a personal access token, stored here as a secre
    the token may also need approving there after you create it.
 4. **Expiration**: your call. The workflow fails loudly when the token expires, rather than silently
    doing nothing, so a shorter expiry is safe.
-5. **Repository access**: *Only select repositories* → the eight packages. Do not grant access to all
-   repositories; this token only ever writes `AGENTS.md`.
+5. **Repository access**: *Only select repositories* → the eight packages, **and
+   `animovement-agents`**. That last one is easy to miss: it is not a package, and the agent-docs
+   sync writes there. Because it is public, a token without it still *reads* the repository fine
+   and fails only on the first write. Do not grant access to all repositories; this token only
+   ever writes the files these two syncs generate.
 6. **Permissions** → *Repository permissions*:
    - **Contents**: Read and write — to create the branch and commit the file
    - **Pull requests**: Read and write — to open the pull request
