@@ -139,10 +139,14 @@ base_tree=$(gh api "repos/$repo/git/commits/$base_sha" --jq '.tree.sha')
 # instead would produce a separate commit per file.
 tree_args=()
 for i in "${!paths[@]}"; do
-  blob=$(printf '%s' "${contents[$i]}" | gh api "repos/$repo/git/blobs" \
-    -f content=@- -f encoding=utf-8 --jq '.sha')
-  tree_args+=(-F "tree[][path]=${paths[$i]}" -F "tree[][mode]=100644" \
-              -F "tree[][type]=blob" -F "tree[][sha]=$blob")
+  # -F, not -f, for the content: only the typed flag reads `@-` from standard
+  # input, and the raw one would post the two characters as the file. -f, not
+  # -F, for the tree fields: the typed flag turns 100644 into a JSON number and
+  # the API requires a string ("Must supply a valid tree.mode").
+  blob=$(printf '%s\n' "${contents[$i]}" | gh api "repos/$repo/git/blobs" \
+    -F content=@- -f encoding=utf-8 --jq '.sha')
+  tree_args+=(-f "tree[][path]=${paths[$i]}" -f "tree[][mode]=100644" \
+              -f "tree[][type]=blob" -f "tree[][sha]=$blob")
 done
 
 tree=$(gh api "repos/$repo/git/trees" -f base_tree="$base_tree" "${tree_args[@]}" --jq '.sha')
