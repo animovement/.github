@@ -119,8 +119,63 @@ if [ "$changed" -eq 0 ]; then
   exit 0
 fi
 
+# A plugin is pinned to the version string in its manifest: an install only picks
+# up new content when that changes. Syncing the reference documents without
+# bumping it ships a skill nobody receives — which is what happened to the five
+# commits that preceded 0.4.0. So the sync bumps its own patch version.
+#
+# Both manifests carry the version and scripts/check.sh asserts they agree, so
+# they move as a pair. They are read from the default branch, the same base the
+# commit below is built on, so a run against an already-open sync branch
+# recomputes the same bump rather than compounding it.
+version_of() {
+  printf '%s' "$1" | sed -n 's/^[[:space:]]*"version": "\([^"]*\)".*/\1/p' | head -1
+}
+
+manifests=(plugin.json .claude-plugin/plugin.json)
+declare -a manifest_bodies=()
+version=""
+
+for m in "${manifests[@]}"; do
+  body=$(gh api "repos/$repo/contents/$m" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
+  [ -n "$body" ] || { echo "::error::cannot read $m from $repo"; exit 1; }
+
+  v=$(version_of "$body")
+  case "$v" in
+    [0-9]*.[0-9]*.[0-9]*) ;;
+    *) echo "::error::$m has no usable version (got '${v:-none}')"; exit 1 ;;
+  esac
+
+  if [ -z "$version" ]; then
+    version="$v"
+  elif [ "$v" != "$version" ]; then
+    # check.sh would fail the pull request anyway; failing here says why.
+    echo "::error::manifests disagree: $version vs $v. Reconcile them before syncing."
+    exit 1
+  fi
+
+  manifest_bodies+=("$body")
+done
+
+IFS=. read -r v_major v_minor v_patch <<<"$version"
+next_version="$v_major.$v_minor.$((v_patch + 1))"
+echo "would bump: $version -> $next_version"
+
+for i in "${!manifests[@]}"; do
+  # Rewrite the version line alone. A JSON round-trip would reformat the rest as
+  # well — key order, and the \u2014 the description escapes — burying the one
+  # line that actually changed.
+  bumped=$(printf '%s' "${manifest_bodies[$i]}" |
+    sed -E "s/^([[:space:]]*\"version\": \")[^\"]*(\",?)$/\1$next_version\2/")
+  [ "$(version_of "$bumped")" = "$next_version" ] ||
+    { echo "::error::failed to rewrite the version in ${manifests[$i]}"; exit 1; }
+
+  paths+=("${manifests[$i]}")
+  contents+=("$bumped")
+done
+
 if [ "$dry_run" = true ]; then
-  echo "dry run — $changed file(s) would change"
+  echo "dry run — $changed file(s) and the version would change"
   exit 0
 fi
 
@@ -151,7 +206,9 @@ done
 
 tree=$(gh api "repos/$repo/git/trees" -f base_tree="$base_tree" "${tree_args[@]}" --jq '.sha')
 commit=$(gh api "repos/$repo/git/commits" \
-  -f message="docs: sync agent-facing documents from animovement/.github@$short" \
+  -f message="docs: sync agent-facing documents from animovement/.github@$short
+
+Bumps the plugin to $next_version so installs pick the change up." \
   -f tree="$tree" -f parents[]="$base_sha" --jq '.sha')
 
 gh api -X POST "repos/$repo/git/refs" -f ref="refs/heads/$branch" -f sha="$commit" >/dev/null 2>&1 ||
@@ -164,6 +221,8 @@ if [ -z "$(gh pr list -R "$repo" --head "$branch" --state open --json number --j
       "Vendored copies of the canonical documents, regenerated from [animovement/.github@\`$short\`](https://github.com/animovement/.github/commit/$sha)." \
       "" \
       "They live beside the \`animovement-dev\` skill so an agent can read them as files rather than fetching a URL. Do not edit them here — edit the source in \`animovement/.github\` and this workflow will open the next pull request." \
+      "" \
+      "Also bumps the plugin to \`$next_version\` in both manifests. A plugin is pinned to its version string, so without that this content would not reach anyone who has it installed." \
       "" \
       "Opened automatically by [Sync agent docs](https://github.com/animovement/.github/actions/workflows/sync-agent-docs.yml).")" >/dev/null
   echo "pull request opened"

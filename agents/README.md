@@ -28,6 +28,21 @@ would change without opening anything.
 
 Repositories already up to date are skipped, so re-running it is harmless.
 
+## The plugin version
+
+`animovement-agents` is a Claude Code plugin, and a plugin is pinned to the version string in its
+manifest — an install picks up new content only when that string changes. Vendoring a document
+without bumping it ships a skill nobody receives.
+
+So **Sync agent docs** bumps the patch version itself, in `plugin.json` and
+`.claude-plugin/plugin.json` together, in the same commit as the documents. Nothing to remember, and
+nothing to do by hand for an ordinary sync. `scripts/check.sh` over there asserts the two manifests
+agree, so a bump that reached only one of them fails the pull request.
+
+The version is read from the default branch each run, so a sync against an already-open sync branch
+recomputes the same bump rather than compounding it. A release that is more than a patch — a new
+skill, a reorganised one — is still bumped by hand in `animovement-agents`.
+
 ## The token it needs
 
 `GITHUB_TOKEN` is scoped to the repository it runs in, so it cannot write to the package
