@@ -22,7 +22,7 @@ Bump the version in **every** place that carries it:
 - [ ] `DESCRIPTION` — drop the `.9000` development suffix
 - [ ] `CITATION.cff` — `version` and `date-released`
 - [ ] `inst/CITATION` — `version`, if the package has one
-- [ ] `NEWS.md` — the `# (development version)` heading becomes `# <package> <version>`
+- [ ] `NEWS.md` — the `# <package> (development version)` heading becomes `# <package> <version> (YYYY-MM-DD)`
 - [ ] `README.md` — re-render it. The version is embedded in the startup banner and the citation block, so it goes stale silently:
 
   ```r

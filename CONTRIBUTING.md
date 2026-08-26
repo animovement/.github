@@ -59,7 +59,7 @@ Please submit changes as a pull request against `main`.
 - Keep a pull request to one logical change. Several small ones are easier to review, and get merged faster, than one large one.
 - The title should briefly describe the change; the body should say why it is needed.
 - If it closes an issue, put `Fixes #issue-number` in the body.
-- For any user-facing change, add a bullet to `NEWS.md` under `# (development version)`, in the style described in the [tidyverse NEWS guide](https://style.tidyverse.org/news.html).
+- For any user-facing change, add a bullet to `NEWS.md` under `# (development version)`. See *Changelogs* below.
 
 Every pull request runs `R CMD check` on Linux, macOS and Windows, builds the pkgdown site, reports test coverage, and checks formatting. All of these must pass before merging.
 
@@ -95,7 +95,94 @@ The scope is optional and is normally the package name (`fix(aniread): …`), or
 
 **The pull request title must follow the same format**, and matters more than the individual commits: merges here squash, so the title becomes the commit that lands on `main`. A workflow checks it, and will tell you what is wrong. Commits within a branch are squashed away, so tidy them if you like, but do not agonise over them.
 
-`NEWS.md` is still written by hand, for users, in the [tidyverse style](https://style.tidyverse.org/news.html) — the commit history drafts release notes, it does not replace them.
+`NEWS.md` is still written by hand, for users — the commit history drafts release notes, it does not replace them. The types above map onto the changelog sections described in *Changelogs*.
+
+### Changelogs
+
+`NEWS.md` is a changelog: a summary of what changed, written for the person
+deciding whether to upgrade and what they will have to fix. It is not a commit
+log, and it is not where the reasoning goes — why a change was made belongs in
+the issue, the pull request, or a blog post.
+
+Headings follow the R convention; sections follow
+[Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
+
+```markdown
+# aniframe (development version)
+
+## Fixed
+
+* `set_unit_space()` converts the length axes of the frame's coordinate system
+  rather than whichever of `x`, `y` and `z` are present (#98). `rho` is a length
+  on polar, cylindrical and spherical frames and was never converted, while the
+  metadata was updated to claim the new unit.
+
+# aniframe 0.7.0 (2026-08-18)
+
+## Added
+
+* `validate_aniframe()` re-checks that the metadata still describes the frame
+  (#79). Counterpart to `validate_anievent()`.
+
+## Changed
+
+* `set_metadata()` no longer writes the `variables_*` fields; use their
+  dedicated setters (#82). Writing them as plain metadata left the frame grouped
+  as before, so operations silently integrated across identities.
+```
+
+**Headings are `# <package> <version> (YYYY-MM-DD)`.** Not Keep a Changelog's
+`## [0.7.0] - 2026-08-18`: pkgdown builds each package's changelog page by
+matching the R form, and the bracketed one fails with *"no version headings
+found"* ([pkgdown#2749](https://github.com/r-lib/pkgdown/issues/2749)).
+`# <package> (development version)` is the Unreleased section, opened by the
+post-release step and renamed at the next release.
+
+**Sections are Keep a Changelog's six**, used only when they have content:
+`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`. They line up
+with the commit types above, so `feat` lands in *Added*, `fix` in *Fixed*.
+
+- A **breaking change** is not its own section. It goes under `Changed` or
+  `Removed`, and the bullet says what breaks and what to do about it — which is
+  what a reader needs, and reads better than a heading that only says something
+  broke.
+- **There is no `Internal` section**, and "internal" is not the test. What
+  matters is whether a change is observable by someone using the package. A
+  refactor nobody can detect gets no entry; the same refactor that makes
+  something measurably faster goes under `Changed`, described by its effect
+  rather than its mechanism. Keep a Changelog's own example is *"Rewrote JSON
+  parser; 3x faster on large files"*, filed under `Changed` rather than given a
+  `Performance` section of its own — there are six sections on purpose. This
+  mirrors the commit types: a `perf` commit usually earns an entry, a
+  `refactor` usually does not.
+- **Documentation**: a new article or a sweeping change goes under `Added`.
+  Reference-index tweaks and wording fixes get no entry.
+
+**Length is whatever the change needs.** A one-line fix takes one line; a new
+class earns a paragraph and a code block. What does *not* belong is the
+reasoning: how the bug was found, what was considered and rejected, why the old
+design was wrong. Compare
+
+```markdown
+* `set_metadata()` no longer writes the `variables_*` fields; use their
+  dedicated setters (#82). Writing them as plain metadata left the frame grouped
+  as before, so operations silently integrated across identities.
+```
+
+with the same entry carrying its own history — *"which is the desynchronisation
+#82 closed"*, *"the cast was also redundant, since `mutate()` has preserved class
+and metadata since #81"*. Both are true; only the first is a changelog.
+
+**Reference the issue or pull request** in parentheses before the full stop, so a
+reader can get from the summary to the detail. **Credit contributors** with
+`@username` alongside it — `(#123, @contributor)` — for anyone who is not a
+maintainer of the package.
+
+For wording — where to put the function name, backticks, present tense, ordering
+within a section — follow the
+[tidyverse NEWS guide](https://style.tidyverse.org/news.html).
+[aniframe's `NEWS.md`](https://github.com/animovement/aniframe/blob/main/NEWS.md)
+is the worked example of all of the above.
 
 ### Two commands that save round trips
 
