@@ -234,6 +234,117 @@ documentation in the next section.
 
 - Function naming follows the verb prefixes each package owns — `read_`, `filter_`, `calculate_`, `check_`, `plot_` and so on. Match the surrounding code.
 
+### Benchmarks
+
+Most functions here do not need timing. A handful — the filters in
+[aniprocess](https://github.com/animovement/aniprocess), the metrics in
+[animetric](https://github.com/animovement/animetric) — are heavy enough that a
+change can quietly make them much slower, and heavy enough that nobody notices
+until someone runs them on a real dataset.
+
+For those, a package keeps a `bench/` directory of plain R scripts:
+
+```
+bench/
+  filter_across.R
+  filter_ccma.R
+```
+
+`bench/` is listed in `.Rbuildignore` and nothing in it is referenced from
+`DESCRIPTION`, so it is invisible to `R CMD check` and adds no dependency. It is
+a developer tool, not part of the package.
+
+**Benchmarks are run by hand, when you touch the function.** There is no CI job.
+These functions change rarely, so a benchmark on every pull request would cost
+more than it caught. What makes that work is a marker comment in `R/`, directly
+above the function and below its roxygen block:
+
+```r
+#' @return An aniframe with the spatial columns smoothed.
+#' @export
+# Benchmark: bench/filter_across.R
+filter_across <- function(data, ...) {
+```
+
+That line is the whole mechanism. It tells you the benchmark exists before you
+edit the function, rather than after someone reports a slowdown. `grep -rn
+"# Benchmark:" R/` lists what is covered.
+
+#### Writing one
+
+Use [bench](https://bench.r-lib.org). `bench::press()` sweeps the parameters,
+`bench::mark()` times the expressions inside each combination:
+
+```r
+# bench/filter_across.R — run with: Rscript bench/filter_across.R
+devtools::load_all(quiet = TRUE)
+
+results <- bench::press(
+  n_individuals = c(10, 50, 250),
+  n_obs = c(100, 500),
+  {
+    af <- aniframe::example_aniframe(
+      n_obs = n_obs,
+      n_individuals = n_individuals,
+      n_keypoints = 1
+    )
+    bench::mark(
+      rollmean = filter_across(af, "rollmean", window = 11),
+      excursion = filter_na_across(af, "excursion"),
+      check = FALSE,
+      min_iterations = 3
+    )
+  }
+)
+
+print(results[c("expression", "n_individuals", "n_obs", "median", "mem_alloc")], n = Inf)
+```
+
+**Vary size, not just settings.** Sweeping two sizes is what separates "this got
+slower" from "this got slower *the bigger it gets*", and the second is the one
+that ruins someone's afternoon. For movement data the two axes are almost always
+**number of tracks** (individuals × keypoints) and **trajectory length** (rows
+per track); a function can be linear in one and quadratic in the other. The run
+above says something useful precisely because it sweeps both:
+
+| expression | individuals | rows | median |
+|---|---|---|---|
+| rollmean | 10 | 100 | 9.8ms |
+| rollmean | 250 | 100 | 88.9ms |
+| rollmean | 10 | 500 | 11.1ms |
+| rollmean | 250 | 500 | 94.2ms |
+| excursion | 10 | 500 | 16.8ms |
+| excursion | 250 | 500 | 216.6ms |
+
+`filter_across()` with `"rollmean"` barely notices five times the rows — its cost
+is per group. `"excursion"` pays for both. A one-size benchmark would have
+reported one of those numbers and told you neither thing.
+
+Keep it under a minute. `min_iterations = 3` and a top size that still finishes
+quickly is enough; a benchmark nobody waits for is a benchmark nobody runs. Set
+`check = FALSE` when the expressions return different things.
+
+#### Reporting one
+
+Run the script on `main`, run it on your branch, and put **both tables in the
+pull request**. Timings are only comparable within one machine, which is why
+results are not committed — a checked-in baseline from someone else's laptop
+invites exactly the comparison that does not mean anything.
+
+If the change is user-visible, the headline number belongs in `NEWS.md` too. A
+deliberate slowdown is fine and sometimes correct — say so and say why, because
+an accidental one of the same size looks identical from the outside.
+
+**Timing assertions do not belong in `tests/`.** A test like
+
+```r
+expect_true(time["elapsed"] < 1)
+```
+
+measures the CI runner as much as the code: it fails for reasons unrelated to
+your change, and a 3× slowdown that still comes in under a second passes
+silently. Move it to `bench/`.
+
 ### Documentation style
 
 We follow the [tidyverse guide to documentation](https://style.tidyverse.org/documentation.html):
