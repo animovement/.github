@@ -146,8 +146,15 @@ with the commit types above, so `feat` lands in *Added*, `fix` in *Fixed*.
   `Removed`, and the bullet says what breaks and what to do about it — which is
   what a reader needs, and reads better than a heading that only says something
   broke.
-- **There is no `Internal` section.** Refactors, test counts and validator
-  renames are not notable changes.
+- **There is no `Internal` section**, and "internal" is not the test. What
+  matters is whether a change is observable by someone using the package. A
+  refactor nobody can detect gets no entry; the same refactor that makes
+  something measurably faster goes under `Changed`, described by its effect
+  rather than its mechanism. Keep a Changelog's own example is *"Rewrote JSON
+  parser; 3x faster on large files"*, filed under `Changed` rather than given a
+  `Performance` section of its own — there are six sections on purpose. This
+  mirrors the commit types: a `perf` commit usually earns an entry, a
+  `refactor` usually does not.
 - **Documentation**: a new article or a sweeping change goes under `Added`.
   Reference-index tweaks and wording fixes get no entry.
 
