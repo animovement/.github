@@ -99,88 +99,83 @@ The scope is optional and is normally the package name (`fix(aniread): …`), or
 
 ### Changelogs
 
-`NEWS.md` is a changelog: a short, readable summary of what changed, written for
-the person deciding whether to upgrade. It is not a commit log and not a place
-for explanations — those belong in the issue or pull request the entry links to.
+`NEWS.md` is a changelog: a summary of what changed, written for the person
+deciding whether to upgrade and what they will have to fix. It is not a commit
+log, and it is not where the reasoning goes — why a change was made belongs in
+the issue, the pull request, or a blog post.
 
-We follow [Keep a Changelog](https://keepachangelog.com/en/2.0.0/) in substance,
-with R's heading grammar. The headings are not a style choice: pkgdown builds
-each package's changelog page by matching `# <package> <version>` headings, and
-Keep a Changelog's `## [1.0.0] - 2026-01-31` form is not recognised — it fails
-with *"no version headings found"*
-([pkgdown#2749](https://github.com/r-lib/pkgdown/issues/2749)).
+Headings follow the R convention; sections follow
+[Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ```markdown
 # aniframe (development version)
 
 ## Fixed
 
-* `set_unit_space()` converts the length axes of the coordinate system rather
-  than whichever of `x`, `y` and `z` are present (#98).
+* `set_unit_space()` converts the length axes of the frame's coordinate system
+  rather than whichever of `x`, `y` and `z` are present (#98). `rho` is a length
+  on polar, cylindrical and spherical frames and was never converted, while the
+  metadata was updated to claim the new unit.
 
-# aniframe 0.7.0 (2026-08-14)
+# aniframe 0.7.0 (2026-08-18)
 
 ## Added
 
-* `get_index()` and `set_index()` declare which column a frame is indexed by (#109).
+* `validate_aniframe()` re-checks that the metadata still describes the frame
+  (#79). Counterpart to `validate_anievent()`.
 
 ## Changed
 
-* `variables_when` holds the temporal context only; the index is declared
-  separately (#109).
+* `set_metadata()` no longer writes the `variables_*` fields; use their
+  dedicated setters (#82). Writing them as plain metadata left the frame grouped
+  as before, so operations silently integrated across identities.
 ```
 
-**Sections** are Keep a Changelog's six, used only when they have content:
+**Headings are `# <package> <version> (YYYY-MM-DD)`.** Not Keep a Changelog's
+`## [0.7.0] - 2026-08-18`: pkgdown builds each package's changelog page by
+matching the R form, and the bracketed one fails with *"no version headings
+found"* ([pkgdown#2749](https://github.com/r-lib/pkgdown/issues/2749)).
+`# <package> (development version)` is the Unreleased section, opened by the
+post-release step and renamed at the next release.
+
+**Sections are Keep a Changelog's six**, used only when they have content:
 `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`. They line up
-with the commit types above — `feat` lands in *Added*, `fix` in *Fixed*, a
-breaking change in *Changed* or *Removed* — so the changelog and the history
-tell the same story.
+with the commit types above, so `feat` lands in *Added*, `fix` in *Fixed*.
 
-**`# <package> (development version)`** is the *Unreleased* section. It is
-opened by the post-release step and renamed to `# <package> <version> (YYYY-MM-DD)`
-at the next release.
+- A **breaking change** is not its own section. It goes under `Changed` or
+  `Removed`, and the bullet says what breaks and what to do about it — which is
+  what a reader needs, and reads better than a heading that only says something
+  broke.
+- **There is no `Internal` section.** Refactors, test counts and validator
+  renames are not notable changes.
+- **Documentation**: a new article or a sweeping change goes under `Added`.
+  Reference-index tweaks and wording fixes get no entry.
 
-**One line per change.** Lead with the function name, present tense, end with the
-issue or pull request number in parentheses before the full stop. If a bullet
-needs a second sentence to make sense, the explanation belongs in the issue and
-the bullet should link to it:
-
-```markdown
-* `map_to_spherical()` returns the radial distance as `rho` (#19).
-```
-
-not
+**Length is whatever the change needs.** A one-line fix takes one line; a new
+class earns a paragraph and a code block. What does *not* belong is the
+reasoning: how the bug was found, what was considered and rejected, why the old
+design was wrong. Compare
 
 ```markdown
-* `map_to_spherical()` now returns the radial distance from the origin as `rho`,
-  rather than the cylindrical radius — the distance from the z-axis. `theta`
-  already used the full radius, so the triple was internally inconsistent with
-  the name "spherical"; ISO 80000-2 and the usual physics convention both use
-  the radial distance. This was lossy, not merely non-standard...
+* `set_metadata()` no longer writes the `variables_*` fields; use their
+  dedicated setters (#82). Writing them as plain metadata left the frame grouped
+  as before, so operations silently integrated across identities.
 ```
 
-The second version is a good issue and a bad changelog entry. A reader scanning
-twenty bullets to decide whether to upgrade will not read it.
+with the same entry carrying its own history — *"which is the desynchronisation
+#82 closed"*, *"the cast was also redundant, since `mutate()` has preserved class
+and metadata since #81"*. Both are true; only the first is a changelog.
 
-**A breaking change** says what breaks and what to do, still in one or two lines,
-and goes under *Changed* or *Removed*:
+**Reference the issue or pull request** in parentheses before the full stop, so a
+reader can get from the summary to the detail. **Credit contributors** with
+`@username` alongside it — `(#123, @contributor)` — for anyone who is not a
+maintainer of the package.
 
-```markdown
-* `spherical_to_z()` takes the radial distance rather than the cylindrical
-  radius; callers passing `rho` from a spherical frame need no change (#19).
-```
-
-**Leave things out.** Keep a Changelog is explicit that a changelog records
-*notable* changes. Internal refactors, test changes, documentation tidying and
-dependency bumps with no user-visible effect do not earn a bullet. If nothing
-user-facing changed, the pull request adds nothing to `NEWS.md`.
-
-For the finer points of wording — where to put the function name, when to use
-backticks, crediting contributors with `@username` — the
-[tidyverse NEWS guide](https://style.tidyverse.org/news.html) is good and we
-follow it. [targets](https://github.com/ropensci/targets/blob/main/NEWS.md) is
-the closest example of the density we want: one line per change, an issue
-reference on almost every entry, and no bullet that outstays its welcome.
+For wording — where to put the function name, backticks, present tense, ordering
+within a section — follow the
+[tidyverse NEWS guide](https://style.tidyverse.org/news.html).
+[aniframe's `NEWS.md`](https://github.com/animovement/aniframe/blob/main/NEWS.md)
+is the worked example of all of the above.
 
 ### Two commands that save round trips
 
