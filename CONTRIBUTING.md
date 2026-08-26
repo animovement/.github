@@ -59,7 +59,7 @@ Please submit changes as a pull request against `main`.
 - Keep a pull request to one logical change. Several small ones are easier to review, and get merged faster, than one large one.
 - The title should briefly describe the change; the body should say why it is needed.
 - If it closes an issue, put `Fixes #issue-number` in the body.
-- For any user-facing change, add a bullet to `NEWS.md` under `# (development version)`, in the style described in the [tidyverse NEWS guide](https://style.tidyverse.org/news.html).
+- For any user-facing change, add a bullet to `NEWS.md` under `# (development version)`. See *Changelogs* below.
 
 Every pull request runs `R CMD check` on Linux, macOS and Windows, builds the pkgdown site, reports test coverage, and checks formatting. All of these must pass before merging.
 
@@ -95,7 +95,92 @@ The scope is optional and is normally the package name (`fix(aniread): …`), or
 
 **The pull request title must follow the same format**, and matters more than the individual commits: merges here squash, so the title becomes the commit that lands on `main`. A workflow checks it, and will tell you what is wrong. Commits within a branch are squashed away, so tidy them if you like, but do not agonise over them.
 
-`NEWS.md` is still written by hand, for users, in the [tidyverse style](https://style.tidyverse.org/news.html) — the commit history drafts release notes, it does not replace them.
+`NEWS.md` is still written by hand, for users — the commit history drafts release notes, it does not replace them. The types above map onto the changelog sections described in *Changelogs*.
+
+### Changelogs
+
+`NEWS.md` is a changelog: a short, readable summary of what changed, written for
+the person deciding whether to upgrade. It is not a commit log and not a place
+for explanations — those belong in the issue or pull request the entry links to.
+
+We follow [Keep a Changelog](https://keepachangelog.com/en/2.0.0/) in substance,
+with R's heading grammar. The headings are not a style choice: pkgdown builds
+each package's changelog page by matching `# <package> <version>` headings, and
+Keep a Changelog's `## [1.0.0] - 2026-01-31` form is not recognised — it fails
+with *"no version headings found"*
+([pkgdown#2749](https://github.com/r-lib/pkgdown/issues/2749)).
+
+```markdown
+# aniframe (development version)
+
+## Fixed
+
+* `set_unit_space()` converts the length axes of the coordinate system rather
+  than whichever of `x`, `y` and `z` are present (#98).
+
+# aniframe 0.7.0 (2026-08-14)
+
+## Added
+
+* `get_index()` and `set_index()` declare which column a frame is indexed by (#109).
+
+## Changed
+
+* `variables_when` holds the temporal context only; the index is declared
+  separately (#109).
+```
+
+**Sections** are Keep a Changelog's six, used only when they have content:
+`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`. They line up
+with the commit types above — `feat` lands in *Added*, `fix` in *Fixed*, a
+breaking change in *Changed* or *Removed* — so the changelog and the history
+tell the same story.
+
+**`# <package> (development version)`** is the *Unreleased* section. It is
+opened by the post-release step and renamed to `# <package> <version> (YYYY-MM-DD)`
+at the next release.
+
+**One line per change.** Lead with the function name, present tense, end with the
+issue or pull request number in parentheses before the full stop. If a bullet
+needs a second sentence to make sense, the explanation belongs in the issue and
+the bullet should link to it:
+
+```markdown
+* `map_to_spherical()` returns the radial distance as `rho` (#19).
+```
+
+not
+
+```markdown
+* `map_to_spherical()` now returns the radial distance from the origin as `rho`,
+  rather than the cylindrical radius — the distance from the z-axis. `theta`
+  already used the full radius, so the triple was internally inconsistent with
+  the name "spherical"; ISO 80000-2 and the usual physics convention both use
+  the radial distance. This was lossy, not merely non-standard...
+```
+
+The second version is a good issue and a bad changelog entry. A reader scanning
+twenty bullets to decide whether to upgrade will not read it.
+
+**A breaking change** says what breaks and what to do, still in one or two lines,
+and goes under *Changed* or *Removed*:
+
+```markdown
+* `spherical_to_z()` takes the radial distance rather than the cylindrical
+  radius; callers passing `rho` from a spherical frame need no change (#19).
+```
+
+**Leave things out.** Keep a Changelog is explicit that a changelog records
+*notable* changes. Internal refactors, test changes, documentation tidying and
+dependency bumps with no user-visible effect do not earn a bullet. If nothing
+user-facing changed, the pull request adds nothing to `NEWS.md`.
+
+For the finer points of wording — where to put the function name, when to use
+backticks, crediting contributors with `@username` — the
+[tidyverse NEWS guide](https://style.tidyverse.org/news.html) is good and we
+follow it. [targets](https://github.com/ropensci/targets/blob/main/NEWS.md) is
+the closest example of the density we want: one line per change, an issue
+reference on almost every entry, and no bullet that outstays its welcome.
 
 ### Two commands that save round trips
 
