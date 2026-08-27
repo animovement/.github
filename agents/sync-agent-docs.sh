@@ -75,8 +75,9 @@ render() {
 render_issue_forms() {
   ./agents/render-issue-forms.rb \
     .github/ISSUE_TEMPLATE/bug_report.yml \
-    .github/ISSUE_TEMPLATE/feature_request.yml |
-    cat <(header ".github/ISSUE_TEMPLATE/{bug_report,feature_request}.yml") -
+    .github/ISSUE_TEMPLATE/feature_request.yml \
+    .github/ISSUE_TEMPLATE/task.yml |
+    cat <(header ".github/ISSUE_TEMPLATE/{bug_report,feature_request,task}.yml") -
 }
 
 declare -a paths=() contents=()
