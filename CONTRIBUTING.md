@@ -21,7 +21,7 @@ animovement is a suite of packages, each owning one stage of the pipeline:
 
 | Package | Owns |
 |---|---|
-| [aniframe](https://github.com/animovement/aniframe) | The core data structures and metadata |
+| [anicore](https://github.com/animovement/anicore) | The core data structures and metadata |
 | [aniread](https://github.com/animovement/aniread) | Reading and writing movement data |
 | [anicheck](https://github.com/animovement/anicheck) | Data-quality diagnostics |
 | [aniprocess](https://github.com/animovement/aniprocess) | Signal processing and filtering |
@@ -86,7 +86,7 @@ The types we use:
 | `chore` | Anything else that touches no user-facing behaviour | None |
 | `revert` | Undoing an earlier commit | Matches what it undoes |
 
-A **breaking change** — a removed or renamed export, a changed default, a different return type — takes a `!` before the colon (`feat(aniframe)!: …`) and a `BREAKING CHANGE:` footer explaining the migration. Those are the ones that force a major bump, so they are worth spelling out.
+A **breaking change** — a removed or renamed export, a changed default, a different return type — takes a `!` before the colon (`feat(anicore)!: …`) and a `BREAKING CHANGE:` footer explaining the migration. Those are the ones that force a major bump, so they are worth spelling out.
 
 The scope is optional and is normally the package name (`fix(aniread): …`), or the area within a package when that is more useful (`fix(read_sleap): …`).
 
@@ -108,7 +108,7 @@ Headings follow the R convention; sections follow
 [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ```markdown
-# aniframe (development version)
+# anicore (development version)
 
 ## Fixed
 
@@ -117,7 +117,7 @@ Headings follow the R convention; sections follow
   on polar, cylindrical and spherical frames and was never converted, while the
   metadata was updated to claim the new unit.
 
-# aniframe 0.7.0 (2026-08-18)
+# anicore 0.7.0 (2026-08-18)
 
 ## Added
 
@@ -181,7 +181,7 @@ maintainer of the package.
 For wording — where to put the function name, backticks, present tense, ordering
 within a section — follow the
 [tidyverse NEWS guide](https://style.tidyverse.org/news.html).
-[aniframe's `NEWS.md`](https://github.com/animovement/aniframe/blob/main/NEWS.md)
+[anicore's `NEWS.md`](https://github.com/animovement/anicore/blob/main/NEWS.md)
 is the worked example of all of the above.
 
 ### Two commands that save round trips
@@ -232,7 +232,65 @@ documentation in the next section.
 
   It runs `R CMD check`, lintr, cyclomatic complexity and coverage together, and reports things like print methods that don't return invisibly, unused internal functions, or untested code. Read it critically rather than treating every line as a defect — it flags `.onAttach` as uncalled, and counts roxygen comments as over-long lines. It is not part of CI for that reason.
 
-- Function naming follows the verb prefixes each package owns — `read_`, `filter_`, `calculate_`, `check_`, `plot_` and so on. Match the surrounding code.
+- **Function naming** follows the verb prefixes below — see *Function naming*.
+
+### Function naming
+
+**Exported names start with a verb**, in the imperative: `get_metadata()` rather than
+`metadata()`, `list_axis_directions()` rather than `axis_directions()`. A noun names a thing;
+these are functions, and someone scanning the reference index should be able to tell what one
+*does* without opening it.
+
+Two kinds of prefix are in play.
+
+**Verbs a package owns**, which say where a function lives:
+
+| Package | Prefixes |
+|---|---|
+| [aniread](https://github.com/animovement/aniread) | `read_`, `write_` |
+| [anicheck](https://github.com/animovement/anicheck) | `check_` |
+| [aniprocess](https://github.com/animovement/aniprocess) | `filter_`, `replace_`, `find_` |
+| [anispace](https://github.com/animovement/anispace) | `map_to_`, `transform_`, `rotate_`, `translate_` |
+| [animetric](https://github.com/animovement/animetric) | `calculate_`, `compute_`, `summarise_`, `add_` |
+| [anivis](https://github.com/animovement/anivis) | `plot_`, `geom_`, `scale_`, `theme_` |
+
+**Verbs that mean the same thing everywhere.** These are mostly [anicore](https://github.com/animovement/anicore)'s,
+and the meaning is a contract — a `get_` that modified the frame, or an `ensure_` that returned
+a value, would be misnamed:
+
+| Prefix | Means |
+|---|---|
+| `get_` / `set_` | read or write one piece of metadata |
+| `is_` / `has_` | a predicate: one `TRUE` or `FALSE` |
+| `ensure_` | a guard: returns invisibly, or errors |
+| `add_` / `remove_` | add or drop columns or rows |
+| `validate_` | re-check an object against its metadata |
+| `list_` | enumerate the values a field accepts |
+| `compute_` / `derive_` | return a value without altering the frame |
+
+That is not aspirational. Of anicore's 79 exports, 67 are `get_` (18), `set_` (16), `is_` (11),
+`ensure_` (10), `add_` (5), `remove_` (5) and `validate_` (2); the rest are `list_`,
+`wrap_`/`unwrap_`, and the exceptions below.
+
+**The same prefixes apply to internal helpers**, which is where most of them live —
+`ensure_*()` guards, `list_*()` tables of accepted values, `derive_*()` and `has_*()`. An
+internal name is still read by the next person to open the file.
+
+**The exceptions are narrow**, and a new name should fall into one of them or take a verb:
+
+- **Constructors and coercions** — `aniframe()`, `anievent()`, `as_aniframe()`, `to_anievent()`.
+  `as_*()` is R's own convention and outranks ours.
+- **Methods for base or dplyr generics** — `filter()`, `mutate()`, `summarise()`, `print()`.
+  The generic's name is not ours to pick.
+- **`X_to_Y()` converters**, where the pair is itself the verb — `deg_to_rad()`,
+  `cartesian_to_rho()`, `polar_to_x()`, `convert_nan_to_na()`.
+- **`example_aniframe()`**, which names the fixture it returns.
+
+The **class** is a separate matter from the package. `aniframe` names the data structure, and
+keeps that name in `as_aniframe()`, `validate_aniframe()`, `inherits(x, "aniframe")` and
+`expect_s3_class(x, "aniframe")`. Only the *package* that defines it is called `anicore`.
+
+When in doubt, match the surrounding code.
 
 ### Documentation style
 
@@ -255,12 +313,12 @@ rather than leaving the reader to find it in the signature.
 
 ```r
 #' @examples
-#' af <- aniframe::example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)
+#' af <- anicore::example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)
 #' map_to_polar(af)
 ```
 
 **Namespace that call.** Under `R CMD check` only the documented package is attached, so an
-unqualified `example_aniframe()` fails everywhere except in aniframe itself. For functions taking
+unqualified `example_aniframe()` fails everywhere except in anicore itself. For functions taking
 plain vectors or data frames, write the input inline.
 
 **`@return` should name what changed.** Nearly everything here returns an aniframe, so the type
