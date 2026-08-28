@@ -232,38 +232,7 @@ documentation in the next section.
 
   It runs `R CMD check`, lintr, cyclomatic complexity and coverage together, and reports things like print methods that don't return invisibly, unused internal functions, or untested code. Read it critically rather than treating every line as a defect — it flags `.onAttach` as uncalled, and counts roxygen comments as over-long lines. It is not part of CI for that reason.
 
-- **Function naming** follows the verb prefixes below — see *Function naming*.
-
-### Function naming
-
-Exported names start with a verb — `get_metadata()`, not `metadata()`. Internal helpers follow
-the same rule.
-
-Each package owns a few:
-
-| Package | Prefixes |
-|---|---|
-| aniread | `read_`, `write_` |
-| anicheck | `check_` |
-| aniprocess | `filter_`, `replace_`, `find_` |
-| anispace | `map_to_`, `transform_`, `rotate_`, `translate_` |
-| animetric | `calculate_`, `compute_`, `summarise_`, `add_` |
-| anivis | `plot_`, `geom_`, `scale_`, `theme_` |
-
-The rest mean the same thing in every package, and the meaning is a contract:
-
-| Prefix | Means |
-|---|---|
-| `get_` / `set_` | read or write one piece of metadata |
-| `is_` / `has_` | a predicate: one `TRUE` or `FALSE` |
-| `ensure_` | a guard: returns invisibly, or errors |
-| `add_` / `remove_` | add or drop columns or rows |
-| `validate_` | re-check an object against its metadata |
-| `list_` | enumerate the values a field accepts |
-| `compute_` / `derive_` | return a value without altering the frame |
-
-Exceptions: constructors and `as_*()` coercions, methods for base or dplyr generics, and
-`X_to_Y()` converters.
+- Function naming follows the verb prefixes each package owns — `read_`, `filter_`, `calculate_`, `check_`, `plot_` and so on. Match the surrounding code.
 
 ### Documentation style
 
