@@ -38,6 +38,11 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          # Bumped when a stale library would otherwise survive: the cache is
+          # restored on a prefix match and only added to, never pruned, so a
+          # package that has been renamed away stays installed and its S3
+          # methods keep winning dispatch (animovement/anicore#127).
+          cache-version: 2
           extra-packages: ${{ inputs.quarto && 'any::pkgdown, any::quarto, local::.' || 'any::pkgdown, local::.' }}
           needs: website
 
