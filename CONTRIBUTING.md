@@ -236,27 +236,22 @@ documentation in the next section.
 
 ### Function naming
 
-**Exported names start with a verb**, in the imperative: `get_metadata()` rather than
-`metadata()`, `list_axis_directions()` rather than `axis_directions()`. A noun names a thing;
-these are functions, and someone scanning the reference index should be able to tell what one
-*does* without opening it.
+Exported names start with a verb — `get_metadata()`, not `metadata()`. Internal helpers follow
+the same rule.
 
-Two kinds of prefix are in play.
-
-**Verbs a package owns**, which say where a function lives:
+Each package owns a few:
 
 | Package | Prefixes |
 |---|---|
-| [aniread](https://github.com/animovement/aniread) | `read_`, `write_` |
-| [anicheck](https://github.com/animovement/anicheck) | `check_` |
-| [aniprocess](https://github.com/animovement/aniprocess) | `filter_`, `replace_`, `find_` |
-| [anispace](https://github.com/animovement/anispace) | `map_to_`, `transform_`, `rotate_`, `translate_` |
-| [animetric](https://github.com/animovement/animetric) | `calculate_`, `compute_`, `summarise_`, `add_` |
-| [anivis](https://github.com/animovement/anivis) | `plot_`, `geom_`, `scale_`, `theme_` |
+| aniread | `read_`, `write_` |
+| anicheck | `check_` |
+| aniprocess | `filter_`, `replace_`, `find_` |
+| anispace | `map_to_`, `transform_`, `rotate_`, `translate_` |
+| animetric | `calculate_`, `compute_`, `summarise_`, `add_` |
+| anivis | `plot_`, `geom_`, `scale_`, `theme_` |
 
-**Verbs that mean the same thing everywhere.** These are mostly [anicore](https://github.com/animovement/anicore)'s,
-and the meaning is a contract — a `get_` that modified the frame, or an `ensure_` that returned
-a value, would be misnamed:
+These mean the same thing everywhere, and the meaning is a contract — a `get_` that modified the
+frame, or an `ensure_` that returned a value, would be misnamed:
 
 | Prefix | Means |
 |---|---|
@@ -268,29 +263,12 @@ a value, would be misnamed:
 | `list_` | enumerate the values a field accepts |
 | `compute_` / `derive_` | return a value without altering the frame |
 
-That is not aspirational. Of anicore's 79 exports, 67 are `get_` (18), `set_` (16), `is_` (11),
-`ensure_` (10), `add_` (5), `remove_` (5) and `validate_` (2); the rest are `list_`,
-`wrap_`/`unwrap_`, and the exceptions below.
+Exceptions: constructors and coercions (`aniframe()`, `as_aniframe()`), methods for base or
+dplyr generics (`filter()`, `print()`), `X_to_Y()` converters (`deg_to_rad()`), and
+`example_aniframe()`.
 
-**The same prefixes apply to internal helpers**, which is where most of them live —
-`ensure_*()` guards, `list_*()` tables of accepted values, `derive_*()` and `has_*()`. An
-internal name is still read by the next person to open the file.
-
-**The exceptions are narrow**, and a new name should fall into one of them or take a verb:
-
-- **Constructors and coercions** — `aniframe()`, `anievent()`, `as_aniframe()`, `to_anievent()`.
-  `as_*()` is R's own convention and outranks ours.
-- **Methods for base or dplyr generics** — `filter()`, `mutate()`, `summarise()`, `print()`.
-  The generic's name is not ours to pick.
-- **`X_to_Y()` converters**, where the pair is itself the verb — `deg_to_rad()`,
-  `cartesian_to_rho()`, `polar_to_x()`, `convert_nan_to_na()`.
-- **`example_aniframe()`**, which names the fixture it returns.
-
-The **class** is a separate matter from the package. `aniframe` names the data structure, and
-keeps that name in `as_aniframe()`, `validate_aniframe()`, `inherits(x, "aniframe")` and
-`expect_s3_class(x, "aniframe")`. Only the *package* that defines it is called `anicore`.
-
-When in doubt, match the surrounding code.
+The `aniframe` **class** keeps its name — `as_aniframe()`, `inherits(x, "aniframe")`. Only the
+package that defines it is `anicore`.
 
 ### Documentation style
 
