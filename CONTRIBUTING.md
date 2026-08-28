@@ -250,8 +250,7 @@ Each package owns a few:
 | animetric | `calculate_`, `compute_`, `summarise_`, `add_` |
 | anivis | `plot_`, `geom_`, `scale_`, `theme_` |
 
-These mean the same thing everywhere, and the meaning is a contract — a `get_` that modified the
-frame, or an `ensure_` that returned a value, would be misnamed:
+The rest mean the same thing in every package, and the meaning is a contract:
 
 | Prefix | Means |
 |---|---|
@@ -263,12 +262,8 @@ frame, or an `ensure_` that returned a value, would be misnamed:
 | `list_` | enumerate the values a field accepts |
 | `compute_` / `derive_` | return a value without altering the frame |
 
-Exceptions: constructors and coercions (`aniframe()`, `as_aniframe()`), methods for base or
-dplyr generics (`filter()`, `print()`), `X_to_Y()` converters (`deg_to_rad()`), and
-`example_aniframe()`.
-
-The `aniframe` **class** keeps its name — `as_aniframe()`, `inherits(x, "aniframe")`. Only the
-package that defines it is `anicore`.
+Exceptions: constructors and `as_*()` coercions, methods for base or dplyr generics, and
+`X_to_Y()` converters.
 
 ### Documentation style
 
