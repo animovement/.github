@@ -21,7 +21,7 @@ animovement is a suite of packages, each owning one stage of the pipeline:
 
 | Package | Owns |
 |---|---|
-| [aniframe](https://github.com/animovement/aniframe) | The core data structures and metadata |
+| [anicore](https://github.com/animovement/anicore) | The core data structures and metadata |
 | [aniread](https://github.com/animovement/aniread) | Reading and writing movement data |
 | [anicheck](https://github.com/animovement/anicheck) | Data-quality diagnostics |
 | [aniprocess](https://github.com/animovement/aniprocess) | Signal processing and filtering |
@@ -86,7 +86,7 @@ The types we use:
 | `chore` | Anything else that touches no user-facing behaviour | None |
 | `revert` | Undoing an earlier commit | Matches what it undoes |
 
-A **breaking change** — a removed or renamed export, a changed default, a different return type — takes a `!` before the colon (`feat(aniframe)!: …`) and a `BREAKING CHANGE:` footer explaining the migration. Those are the ones that force a major bump, so they are worth spelling out.
+A **breaking change** — a removed or renamed export, a changed default, a different return type — takes a `!` before the colon (`feat(anicore)!: …`) and a `BREAKING CHANGE:` footer explaining the migration. Those are the ones that force a major bump, so they are worth spelling out.
 
 The scope is optional and is normally the package name (`fix(aniread): …`), or the area within a package when that is more useful (`fix(read_sleap): …`).
 
@@ -108,7 +108,7 @@ Headings follow the R convention; sections follow
 [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ```markdown
-# aniframe (development version)
+# anicore (development version)
 
 ## Fixed
 
@@ -117,7 +117,7 @@ Headings follow the R convention; sections follow
   on polar, cylindrical and spherical frames and was never converted, while the
   metadata was updated to claim the new unit.
 
-# aniframe 0.7.0 (2026-08-18)
+# anicore 0.7.0 (2026-08-18)
 
 ## Added
 
@@ -181,7 +181,7 @@ maintainer of the package.
 For wording — where to put the function name, backticks, present tense, ordering
 within a section — follow the
 [tidyverse NEWS guide](https://style.tidyverse.org/news.html).
-[aniframe's `NEWS.md`](https://github.com/animovement/aniframe/blob/main/NEWS.md)
+[anicore's `NEWS.md`](https://github.com/animovement/anicore/blob/main/NEWS.md)
 is the worked example of all of the above.
 
 ### Two commands that save round trips
@@ -255,12 +255,12 @@ rather than leaving the reader to find it in the signature.
 
 ```r
 #' @examples
-#' af <- aniframe::example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)
+#' af <- anicore::example_aniframe(n_obs = 5, n_individuals = 1, n_keypoints = 1)
 #' map_to_polar(af)
 ```
 
 **Namespace that call.** Under `R CMD check` only the documented package is attached, so an
-unqualified `example_aniframe()` fails everywhere except in aniframe itself. For functions taking
+unqualified `example_aniframe()` fails everywhere except in anicore itself. For functions taking
 plain vectors or data frames, write the input inline.
 
 **`@return` should name what changed.** Nearly everything here returns an aniframe, so the type
