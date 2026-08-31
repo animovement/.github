@@ -1,6 +1,7 @@
 name: Feature request
 description: Suggest an idea for an animovement package
 type: Feature
+projects: ["animovement/1"]
 body:
   - type: markdown
     attributes:

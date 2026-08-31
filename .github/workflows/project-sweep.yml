@@ -9,8 +9,10 @@
 #
 # So repositories are discovered from the org API instead of being listed
 # anywhere, which means a new repository is covered from the day it is created
-# and there is nothing per-repository to maintain. The cost is that an item can
-# take up to an hour to appear; run this by hand to add one immediately.
+# and there is nothing per-repository to maintain. The cost is latency: an item
+# can take up to a day to appear. Run this by hand to add one immediately --
+# that is what the manual trigger is for, and issues opened through a template
+# carry the `projects` key so they land without waiting.
 #
 # Needs a PAT with the `project` scope, as an *organisation* secret named
 # PROJECT_TOKEN (or AGENTS_SYNC_TOKEN, if that one already carries the scope):
@@ -20,9 +22,9 @@ name: Project Sweep
 
 on:
   schedule:
-    # Hourly, off the hour: scheduled runs bunch up on the hour and GitHub
-    # drops them when too many fire at once.
-    - cron: "17 * * * *"
+    # Daily, off the hour: scheduled runs bunch up on the hour and GitHub drops
+    # them when too many fire at once.
+    - cron: "17 4 * * *"
   workflow_dispatch:
     inputs:
       dry-run:
