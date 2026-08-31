@@ -31,10 +31,24 @@ putting it back.
 
 Writing to `.github/workflows/` in another repository needs more than the usual
 token. `GITHUB_TOKEN` is scoped to this repository, and even a personal token
-must carry the **workflow** scope — a classic token with `repo` alone is
-rejected with `refusing to allow ... to create or update workflow`. The sync
-reuses `AGENTS_SYNC_TOKEN`; if that token predates this workflow it will need
-the extra scope adding, and the run fails loudly rather than silently skipping.
+must carry the **workflow** scope. Without it the API refuses the write:
+
+```
+gh: refusing to allow a Personal Access Token to create or update workflow
+    `.github/workflows/pkgdown.yaml` without `workflow` scope (HTTP 403)
+```
+
+That is what the first run hit. The sync reuses `AGENTS_SYNC_TOKEN`, created for
+`AGENTS.md`, which does not need the scope — so it has to be added there:
+
+- **Classic token** — tick `workflow` alongside `repo`.
+- **Fine-grained token** — set *Workflows* to **Read and write**, for every
+  repository the sync writes to.
+
+The restriction applies to `git push` as well as to the API, so there is no way
+around it from inside the workflow. It reports the missing scope by name and
+carries on to the next repository, so one run tells you about every repository
+rather than the first.
 
 ## What is deliberately not synced
 
