@@ -43,6 +43,7 @@ jobs:
 
           branch="chore/sync-workflow-stubs"
           repos_changed=0
+          failed=""
 
           while IFS=$'\t' read -r pkg _rest; do
             [ -z "$pkg" ] && continue
@@ -81,6 +82,7 @@ jobs:
             fi
 
             base_sha=$(gh api "repos/$repo/git/ref/heads/main" --jq '.object.sha')
+            push_failed=0
             gh api -X POST "repos/$repo/git/refs" -f ref="refs/heads/$branch" -f sha="$base_sha" >/dev/null 2>&1 || \
               gh api -X PATCH "repos/$repo/git/refs/heads/$branch" -f sha="$base_sha" -F force=true >/dev/null
 
@@ -88,16 +90,35 @@ jobs:
               path=".github/workflows/$name"
               content=$(base64 < "workflows/stubs/$name" | tr -d '\n')
               file_sha=$(gh api "repos/$repo/contents/$path?ref=$branch" --jq '.sha' 2>/dev/null || true)
+              # A token without the `workflow` scope is refused here, and that is
+              # the whole job -- so say which scope, and carry on to the next
+              # repository rather than aborting with one report out of eight.
               if [ -n "$file_sha" ] && [ "$file_sha" != "null" ]; then
-                gh api -X PUT "repos/$repo/contents/$path" \
+                err=$(gh api -X PUT "repos/$repo/contents/$path" \
                   -f message="ci: sync $name from animovement/.github" \
-                  -f content="$content" -f branch="$branch" -f sha="$file_sha" >/dev/null
+                  -f content="$content" -f branch="$branch" -f sha="$file_sha" 2>&1 >/dev/null) || push_failed=1
               else
-                gh api -X PUT "repos/$repo/contents/$path" \
+                err=$(gh api -X PUT "repos/$repo/contents/$path" \
                   -f message="ci: sync $name from animovement/.github" \
-                  -f content="$content" -f branch="$branch" >/dev/null
+                  -f content="$content" -f branch="$branch" 2>&1 >/dev/null) || push_failed=1
+              fi
+
+              if [ "$push_failed" = "1" ]; then
+                case "$err" in
+                  *"without \`workflow\` scope"*|*"workflow scope"*)
+                    echo "::error title=Token needs the workflow scope::AGENTS_SYNC_TOKEN cannot write .github/workflows/. Add the \`workflow\` scope to it (fine-grained: Workflows -> Read and write), then re-run. See workflows/README.md." ;;
+                  *)
+                    echo "::error title=Could not update $name in $pkg::$err" ;;
+                esac
+                failed="$failed $pkg/$name"
+                break
               fi
             done
+
+            if [ "$push_failed" = "1" ]; then
+              echo "::endgroup::"
+              continue
+            fi
 
             if [ -z "$(gh pr list -R "$repo" --head "$branch" --state open --json number --jq '.[0].number')" ]; then
               gh pr create -R "$repo" --base main --head "$branch" \
@@ -118,3 +139,8 @@ jobs:
           done < agents/packages.tsv
 
           echo "repositories needing an update: $repos_changed"
+
+          if [ -n "$failed" ]; then
+            echo "::error::could not update:$failed"
+            exit 1
+          fi
