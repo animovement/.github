@@ -1,0 +1,120 @@
+# Copies workflows/stubs/* into every package in agents/packages.tsv and opens a
+# pull request in each repository whose copy is out of date.
+#
+# The jobs themselves are reusable workflows in this repository; only the
+# triggers have to live in each package, and those are what drift. See
+# workflows/README.md.
+#
+# Needs a token that can write to the other repositories, with the `workflow`
+# scope: GITHUB_TOKEN is scoped to this one, and workflow files are refused
+# without that scope.
+name: Sync workflow stubs
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report what would change without opening pull requests"
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches: [main]
+    paths:
+      - "workflows/stubs/**"
+      - "agents/packages.tsv"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare stubs and open pull requests
+        env:
+          GH_TOKEN: ${{ secrets.AGENTS_SYNC_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::AGENTS_SYNC_TOKEN is not set. See workflows/README.md."
+            exit 1
+          fi
+
+          branch="chore/sync-workflow-stubs"
+          repos_changed=0
+
+          while IFS=$'\t' read -r pkg _rest; do
+            [ -z "$pkg" ] && continue
+            repo="animovement/$pkg"
+            echo "::group::$pkg"
+
+            stale=""
+            for stub in workflows/stubs/*; do
+              name=$(basename "$stub")
+              path=".github/workflows/$name"
+
+              # A repository that does not carry a stub has opted out; the sync
+              # updates what is there and never adds a workflow.
+              if ! resp=$(gh api "repos/$repo/contents/$path" 2>/dev/null); then
+                echo "$name: absent, leaving alone"
+                continue
+              fi
+
+              current=$(printf '%s' "$resp" | jq -r '.content // ""' | tr -d '\n' | base64 -d 2>/dev/null || true)
+              if [ "$current" = "$(cat "$stub")" ]; then
+                echo "$name: up to date"
+                continue
+              fi
+
+              echo "$name: differs"
+              stale="$stale $name"
+            done
+
+            [ -z "$stale" ] && { echo "::endgroup::"; continue; }
+
+            repos_changed=$((repos_changed + 1))
+            if [ "${DRY_RUN:-false}" = "true" ]; then
+              echo "would update:$stale"
+              echo "::endgroup::"
+              continue
+            fi
+
+            base_sha=$(gh api "repos/$repo/git/ref/heads/main" --jq '.object.sha')
+            gh api -X POST "repos/$repo/git/refs" -f ref="refs/heads/$branch" -f sha="$base_sha" >/dev/null 2>&1 || \
+              gh api -X PATCH "repos/$repo/git/refs/heads/$branch" -f sha="$base_sha" -F force=true >/dev/null
+
+            for name in $stale; do
+              path=".github/workflows/$name"
+              content=$(base64 < "workflows/stubs/$name" | tr -d '\n')
+              file_sha=$(gh api "repos/$repo/contents/$path?ref=$branch" --jq '.sha' 2>/dev/null || true)
+              if [ -n "$file_sha" ] && [ "$file_sha" != "null" ]; then
+                gh api -X PUT "repos/$repo/contents/$path" \
+                  -f message="ci: sync $name from animovement/.github" \
+                  -f content="$content" -f branch="$branch" -f sha="$file_sha" >/dev/null
+              else
+                gh api -X PUT "repos/$repo/contents/$path" \
+                  -f message="ci: sync $name from animovement/.github" \
+                  -f content="$content" -f branch="$branch" >/dev/null
+              fi
+            done
+
+            if [ -z "$(gh pr list -R "$repo" --head "$branch" --state open --json number --jq '.[0].number')" ]; then
+              gh pr create -R "$repo" --base main --head "$branch" \
+                --title "ci: sync workflow stubs" \
+                --body "$(printf '%s\n' \
+                  "Brings this repository's workflow stubs back in line with \`workflows/stubs/\` in [animovement/.github](https://github.com/animovement/.github)." \
+                  "" \
+                  "Updated:$stale" \
+                  "" \
+                  "The jobs live in animovement/.github as reusable workflows; only the triggers have to live here, and those are what drift. Do not edit these files here — edit the stub and re-run the **Sync workflow stubs** workflow, otherwise the next sync opens this pull request again." \
+                  "" \
+                  "Opened automatically by [Sync workflow stubs](https://github.com/animovement/.github/actions/workflows/sync-workflow-stubs.yml).")" >/dev/null
+              echo "pull request opened"
+            else
+              echo "existing pull request updated"
+            fi
+            echo "::endgroup::"
+          done < agents/packages.tsv
+
+          echo "repositories needing an update: $repos_changed"
