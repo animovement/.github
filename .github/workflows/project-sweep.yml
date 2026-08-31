@@ -1,27 +1,20 @@
 # Reconciles the org project board against every open issue and pull request
-# in the organisation.
+# in the organisation. Run it by hand when things are moving fast, or after
+# adding a repository.
 #
-# Deliberately a sweep rather than a per-repository `on: issues` stub. A stub
-# is only as good as its presence: it has to be added to every repository and
-# remembered for every new one, and when it is missing nothing says so. That is
-# how an entire repository came to be absent from the board -- along with two
-# others nobody had noticed were missing.
+# This used to be the mechanism. It is now the backstop: `add-to-project.yml`
+# puts issues and pull requests on the board as they are opened, via a stub in
+# each repository, and the issue templates carry `projects` for good measure.
 #
-# So repositories are discovered from the org API instead of being listed
-# anywhere, which means a new repository is covered from the day it is created
-# and there is nothing per-repository to maintain. The cost is that an item can
-# take up to an hour to appear; run this by hand to add one immediately.
+# The old objection to per-repository stubs was that one is only as good as its
+# presence — it has to be added to every repository and remembered for every
+# new one, and when it is missing nothing says so. That is how three
+# repositories came to be absent from the board. So this sweep now *checks* for
+# the stub and names the repositories that lack one, which is the part that was
+# missing when that argument was made.
 #
-# The issue templates now carry `projects: ["animovement/1"]`, so an issue opened
-# through a template in the web UI lands on the board immediately and the sweep
-# never sees it. That covers the common case, not every case, and this workflow
-# is still what makes the board complete. It remains the only thing that catches:
-#
-#   - pull requests, which have no template equivalent of the `projects` key
-#   - anything opened through the API or `gh`, which does not apply templates
-#   - issues opened by someone without write access to the project, where the
-#     `projects` key is silently ignored
-#   - blank issues, and any repository whose templates drift
+# Repositories are still discovered from the org API rather than listed
+# anywhere, so a new repository is covered the day it is created.
 #
 # Needs a PAT with the `project` scope, as an *organisation* secret named
 # PROJECT_TOKEN (or AGENTS_SYNC_TOKEN, if that one already carries the scope):
@@ -30,10 +23,6 @@
 name: Project Sweep
 
 on:
-  schedule:
-    # Hourly, off the hour: scheduled runs bunch up on the hour and GitHub
-    # drops them when too many fire at once.
-    - cron: "17 * * * *"
   workflow_dispatch:
     inputs:
       dry-run:
@@ -80,6 +69,7 @@ jobs:
 
           # Every open issue and PR, across every non-archived repository.
           : > open.txt
+          : > no-stub.txt
           repos=$(gh api "orgs/$owner/repos" --paginate \
             --jq '.[] | select(.archived | not) | .name')
           for repo in $repos; do
@@ -95,9 +85,22 @@ jobs:
               --json url --jq '.[].url' >> open.txt 2>/dev/null || true
             gh pr list -R "$owner/$repo" --state open --limit 500 \
               --json url --jq '.[].url' >> open.txt 2>/dev/null || true
+
+            # A repository with no add-to-project stub relies entirely on this
+            # sweep, which is now manual. Say so rather than let it go quiet.
+            if ! gh api "repos/$owner/$repo/contents/.github/workflows/add-to-project.yml" \
+              --silent 2>/dev/null; then
+              echo "$repo" >> no-stub.txt
+            fi
           done
           sort -u -o open.txt open.txt
           echo "Open across the org: $(wc -l < open.txt)"
+
+          if [ -s no-stub.txt ]; then
+            echo "::warning::These repositories have no add-to-project stub," \
+              "so their issues and pull requests reach the board only when this" \
+              "sweep is run by hand: $(paste -sd' ' no-stub.txt)"
+          fi
 
           comm -23 open.txt on-board.txt > missing.txt
           count=$(wc -l < missing.txt | tr -d ' ')

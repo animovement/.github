@@ -1,0 +1,50 @@
+# Reusable workflow: put the issue or pull request that triggered the caller
+# onto the org project board.
+#
+# Called by a stub in each repository, because a workflow only runs in the
+# repository where the event happened — there is no org-wide `on: pull_request`.
+# The stub is deliberately thin: it declares the trigger and nothing else, so
+# the logic here can change without touching every repository.
+#
+# `project-sweep.yml` is the backstop, and reports which repositories are
+# missing this stub when you run it.
+#
+# Needs a PAT with the `project` scope as an *organisation* secret named
+# PROJECT_TOKEN (or AGENTS_SYNC_TOKEN, if that one already carries the scope):
+# GITHUB_TOKEN cannot write to an organisation project no matter what
+# `permissions` it is given.
+name: add-to-project
+
+on:
+  workflow_call:
+
+jobs:
+  add-to-project:
+    name: add-to-project
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add to the board
+        env:
+          # In a reusable workflow the `github` context is the caller's, so
+          # this is the issue or pull request that fired the stub.
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN || secrets.AGENTS_SYNC_TOKEN }}
+          URL: ${{ github.event.pull_request.html_url || github.event.issue.html_url }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::No PROJECT_TOKEN or AGENTS_SYNC_TOKEN secret is set." \
+              "Both must be organisation secrets to be visible here."
+            exit 1
+          fi
+
+          if [ -z "${URL:-}" ]; then
+            echo "::error::No issue or pull request URL on the triggering event."
+            exit 1
+          fi
+
+          # Adding an item already on the board is a no-op that succeeds, so a
+          # reopened item needs no special case.
+          gh project item-add 1 --owner animovement --url "$URL"
+          echo "Added $URL"
