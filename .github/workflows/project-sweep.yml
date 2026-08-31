@@ -1,17 +1,18 @@
 # Reconciles the org project board against every open issue and pull request
-# in the organisation. Run it by hand when things are moving fast, or after
-# adding a repository.
+# in the organisation.
 #
-# Manual rather than scheduled, and it is the mechanism for most repositories
-# rather than a backstop. Two things reach the board without it: issues opened
-# through a template, which carry the `projects` key, and repositories that
-# have opted into the `add-to-project.yml` stub. Neither is org-wide -- a
-# workflow only runs where the event happened, and the templates do not apply
-# to pull requests or to anything opened through the API -- so this sweep is
-# what makes the board complete, on whatever schedule you run it.
+# Deliberately a sweep rather than a per-repository `on: issues` stub. A stub
+# is only as good as its presence: it has to be added to every repository and
+# remembered for every new one, and when it is missing nothing says so. That is
+# how an entire repository came to be absent from the board -- along with two
+# others nobody had noticed were missing.
 #
-# Repositories are discovered from the org API rather than listed anywhere, so
-# a new repository is covered the day it is created.
+# So repositories are discovered from the org API instead of being listed
+# anywhere, which means a new repository is covered from the day it is created
+# and there is nothing per-repository to maintain. The cost is latency: an item
+# can take up to a day to appear. Run this by hand to add one immediately --
+# that is what the manual trigger is for, and issues opened through a template
+# carry the `projects` key so they land without waiting.
 #
 # Needs a PAT with the `project` scope, as an *organisation* secret named
 # PROJECT_TOKEN (or AGENTS_SYNC_TOKEN, if that one already carries the scope):
@@ -20,6 +21,10 @@
 name: Project Sweep
 
 on:
+  schedule:
+    # Daily, off the hour: scheduled runs bunch up on the hour and GitHub drops
+    # them when too many fire at once.
+    - cron: "17 4 * * *"
   workflow_dispatch:
     inputs:
       dry-run:
