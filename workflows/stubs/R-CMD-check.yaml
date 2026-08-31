@@ -1,0 +1,16 @@
+# Runs R CMD check. The workflow lives in animovement/.github so it is
+# maintained in one place; only the triggers are declared here, because GitHub
+# fires them against this repository.
+name: R-CMD-check
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions: read-all
+
+jobs:
+  R-CMD-check:
+    uses: animovement/.github/.github/workflows/r-cmd-check.yml@main
+    secrets: inherit
