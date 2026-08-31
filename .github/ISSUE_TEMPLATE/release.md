@@ -3,6 +3,7 @@ name: Release checklist
 about: Track the steps for releasing a new version of a package (maintainers)
 title: "Release <package> <version>"
 type: Task
+projects: ["animovement/1"]
 ---
 
 Steps for cutting a release. The animovement packages are published on [R-universe](https://animovement.r-universe.dev) rather than CRAN, so there is no submission step — R-universe rebuilds from `main`.

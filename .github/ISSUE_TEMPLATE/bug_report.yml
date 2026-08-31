@@ -1,6 +1,7 @@
 name: Bug report
 description: Something in an animovement package does not work as expected
 type: Bug
+projects: ["animovement/1"]
 body:
   - type: markdown
     attributes:

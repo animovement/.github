@@ -12,6 +12,17 @@
 # and there is nothing per-repository to maintain. The cost is that an item can
 # take up to an hour to appear; run this by hand to add one immediately.
 #
+# The issue templates now carry `projects: ["animovement/1"]`, so an issue opened
+# through a template in the web UI lands on the board immediately and the sweep
+# never sees it. That covers the common case, not every case, and this workflow
+# is still what makes the board complete. It remains the only thing that catches:
+#
+#   - pull requests, which have no template equivalent of the `projects` key
+#   - anything opened through the API or `gh`, which does not apply templates
+#   - issues opened by someone without write access to the project, where the
+#     `projects` key is silently ignored
+#   - blank issues, and any repository whose templates drift
+#
 # Needs a PAT with the `project` scope, as an *organisation* secret named
 # PROJECT_TOKEN (or AGENTS_SYNC_TOKEN, if that one already carries the scope):
 # GITHUB_TOKEN cannot write to an organisation project no matter what
