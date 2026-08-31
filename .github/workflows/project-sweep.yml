@@ -2,19 +2,16 @@
 # in the organisation. Run it by hand when things are moving fast, or after
 # adding a repository.
 #
-# This used to be the mechanism. It is now the backstop: `add-to-project.yml`
-# puts issues and pull requests on the board as they are opened, via a stub in
-# each repository, and the issue templates carry `projects` for good measure.
+# Manual rather than scheduled, and it is the mechanism for most repositories
+# rather than a backstop. Two things reach the board without it: issues opened
+# through a template, which carry the `projects` key, and repositories that
+# have opted into the `add-to-project.yml` stub. Neither is org-wide -- a
+# workflow only runs where the event happened, and the templates do not apply
+# to pull requests or to anything opened through the API -- so this sweep is
+# what makes the board complete, on whatever schedule you run it.
 #
-# The old objection to per-repository stubs was that one is only as good as its
-# presence — it has to be added to every repository and remembered for every
-# new one, and when it is missing nothing says so. That is how three
-# repositories came to be absent from the board. So this sweep now *checks* for
-# the stub and names the repositories that lack one, which is the part that was
-# missing when that argument was made.
-#
-# Repositories are still discovered from the org API rather than listed
-# anywhere, so a new repository is covered the day it is created.
+# Repositories are discovered from the org API rather than listed anywhere, so
+# a new repository is covered the day it is created.
 #
 # Needs a PAT with the `project` scope, as an *organisation* secret named
 # PROJECT_TOKEN (or AGENTS_SYNC_TOKEN, if that one already carries the scope):
@@ -69,7 +66,6 @@ jobs:
 
           # Every open issue and PR, across every non-archived repository.
           : > open.txt
-          : > no-stub.txt
           repos=$(gh api "orgs/$owner/repos" --paginate \
             --jq '.[] | select(.archived | not) | .name')
           for repo in $repos; do
@@ -85,22 +81,9 @@ jobs:
               --json url --jq '.[].url' >> open.txt 2>/dev/null || true
             gh pr list -R "$owner/$repo" --state open --limit 500 \
               --json url --jq '.[].url' >> open.txt 2>/dev/null || true
-
-            # A repository with no add-to-project stub relies entirely on this
-            # sweep, which is now manual. Say so rather than let it go quiet.
-            if ! gh api "repos/$owner/$repo/contents/.github/workflows/add-to-project.yml" \
-              --silent 2>/dev/null; then
-              echo "$repo" >> no-stub.txt
-            fi
           done
           sort -u -o open.txt open.txt
           echo "Open across the org: $(wc -l < open.txt)"
-
-          if [ -s no-stub.txt ]; then
-            echo "::warning::These repositories have no add-to-project stub," \
-              "so their issues and pull requests reach the board only when this" \
-              "sweep is run by hand: $(paste -sd' ' no-stub.txt)"
-          fi
 
           comm -23 open.txt on-board.txt > missing.txt
           count=$(wc -l < missing.txt | tr -d ' ')
