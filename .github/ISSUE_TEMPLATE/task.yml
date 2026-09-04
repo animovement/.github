@@ -1,0 +1,46 @@
+name: Task
+description: A defined piece of work — maintenance, CI, refactoring, follow-ups
+type: Task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For work where what needs doing is already clear. If you are proposing something new, or
+        reporting something broken, the other two templates fit better.
+
+  - type: textarea
+    id: work
+    attributes:
+      label: What needs doing?
+      description: The work itself, in a sentence or two.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: What prompted this?
+      description: |
+        Link the issue, pull request or conversation it came out of. A task with no trail behind it
+        is the one nobody can judge later.
+    validations:
+      required: false
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: What has to be true to close this. A checklist is usually the clearest form.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Which packages it touches, whether anything has to land first.
+    validations:
+      required: false
