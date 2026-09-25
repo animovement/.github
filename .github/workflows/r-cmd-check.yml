@@ -70,3 +70,29 @@ jobs:
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+
+  # anicore changes its metadata storage freely because everything outside it
+  # goes through get_metadata()/set_metadata() and the variables accessors
+  # (animovement/anicore#155). Raw reads are what turned the #118 layout change
+  # into a suite-wide migration, so they fail here. A line that genuinely needs
+  # the raw attribute opts out with a trailing `# anicore: allow-metadata` on
+  # the same line. air moves a comment that trails `{`, so put the raw read in
+  # an assignment of its own.
+  anicore-metadata-contract:
+    if: github.repository != 'animovement/anicore'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refuse raw anicore metadata reads
+        run: |
+          pattern='attr\([^)]*["'"'"']metadata["'"'"']|\$variables_(what|when|where|index|event)\b|\[\[["'"'"']variables_(what|when|where|index|event)["'"'"']'
+          hits=$(grep -rnE "$pattern" R/ --include='*.R' \
+            | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' \
+            | grep -v 'anicore: allow-metadata' || true)
+          if [ -n "$hits" ]; then
+            while IFS=: read -r file line _; do
+              echo "::error file=$file,line=$line::Raw anicore metadata access. Use get_metadata(), set_metadata(), get_variables(), get_keys() or get_index() (animovement/anicore#155)."
+            done <<< "$hits"
+            exit 1
+          fi
