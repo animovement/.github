@@ -75,7 +75,9 @@ jobs:
   # goes through get_metadata()/set_metadata() and the variables accessors
   # (animovement/anicore#155). Raw reads are what turned the #118 layout change
   # into a suite-wide migration, so they fail here. A line that genuinely needs
-  # the raw attribute opts out with a trailing `# anicore: allow-metadata`.
+  # the raw attribute opts out with a trailing `# anicore: allow-metadata` on
+  # the same line. air moves a comment that trails `{`, so put the raw read in
+  # an assignment of its own.
   anicore-metadata-contract:
     if: github.repository != 'animovement/anicore'
     runs-on: ubuntu-latest
