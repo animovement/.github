@@ -1,6 +1,7 @@
-# Vendors CONTRIBUTING.md, AI.md and the release checklist into
-# animovement-agents, beside the animovement-dev skill, and opens a pull request
-# there when they change. An agent can then read them as files; many cannot fetch
+# Vendors CONTRIBUTING.md, AI.md, the release checklist, the pull request
+# template and the issue forms (rendered to markdown) into animovement-agents,
+# beside the animovement-dev skill, and opens a pull request there when they
+# change. An agent can then read them as files; many cannot fetch
 # a URL, and those that can will often skip it.
 #
 # Needs a token that can write to the other repository: GITHUB_TOKEN is scoped to

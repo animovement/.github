@@ -54,5 +54,30 @@ rather than the first.
 
 `release-to-zulip.yml` is here too, but a repository is free to opt out by
 deleting it — the sync only updates a stub that already exists, and never
-creates one. A new package still needs its stubs copying in once, which is what
-`packaging.md` describes.
+creates one.
+
+The same rule is why no package checks its pull request titles: `pr-title.yml`
+is a reusable workflow here, but there is no stub for it in `stubs/`, and adding
+one would not put it in any repository that lacks it.
+
+## A new package
+
+Because the sync never creates a stub, a new package gets them by hand, once:
+
+1. Copy every file in `stubs/` into the new repository's `.github/workflows/`,
+   unchanged.
+2. Add the package to `agents/packages.tsv`, so later changes to the stubs (and
+   to `AGENTS.md`) reach it.
+3. Protect `main` with a ruleset like the other packages', in the new
+   repository's settings: pull requests required, and these status checks:
+
+   - `R-CMD-check / ubuntu-latest (release)`
+   - `R-CMD-check / ubuntu-latest (oldrel-1)`
+   - `R-CMD-check / macos-latest (release)`
+   - `R-CMD-check / windows-latest (release)`
+   - `pkgdown / pkgdown`
+   - `test-coverage / test-coverage`
+   - `format-suggest / format-suggest`
+
+   Each name is the stub's job, then the shared workflow's job, so stubs
+   copied in unchanged produce exactly these.
