@@ -49,7 +49,11 @@ devtools::load_all()
 devtools::test()
 ```
 
-Some repositories carry an `renv.lock`. You do not need renv to contribute — it records a known-good set of versions for reproducing a specific environment, and CI resolves dependencies from `DESCRIPTION` rather than from the lockfile.
+You do not need renv to contribute, but you will meet it. Every package carries an `renv.lock` and an `.Rprofile` that sources `renv/activate.R`, so starting R in a package directory activates renv: it installs renv if it is missing and switches to a project library, separate from your usual one. CI switches this off with `RENV_CONFIG_AUTOLOADER_ENABLED=false` and resolves dependencies from `DESCRIPTION`, and the lockfiles are not kept in step with `DESCRIPTION`. To work the way CI does, set the same variable before R starts — in `~/.Renviron` (`usethis::edit_r_environ()` opens it), which turns renv's autoloader off for every project:
+
+```
+RENV_CONFIG_AUTOLOADER_ENABLED=false
+```
 
 ### Pull requests
 
@@ -57,11 +61,9 @@ Please submit changes as a pull request against `main`.
 
 - Create a branch for your work. `usethis::pr_init("brief-description")` sets this up.
 - Keep a pull request to one logical change. Several small ones are easier to review, and get merged faster, than one large one.
-- The title should briefly describe the change; the body should say why it is needed.
+- The title is a Conventional Commit, the same format as a commit message (see *Commit messages*); the body should say why the change is needed.
 - If it closes an issue, put `Fixes #issue-number` in the body.
-- For any user-facing change, add a bullet to `NEWS.md` under `# (development version)`. See *Changelogs* below.
-
-Every pull request runs `R CMD check` on Linux, macOS and Windows, builds the pkgdown site, reports test coverage, and checks formatting. All of these must pass before merging.
+- For any user-facing change, add a bullet to `NEWS.md` under `# <package> (development version)`. See *Changelogs* below.
 
 ### Commit messages
 
@@ -93,7 +95,13 @@ The scope is optional and is normally the package name (`fix(aniread): …`), or
 - Write the description in the imperative — *add*, not *added* or *adds* — and lower-case, with no trailing full stop.
 - Describe the change, not the file: `fix(aniprocess): keep metadata through filter_kalman()` rather than `fix: update filter-kalman.R`.
 
-**The pull request title must follow the same format**, and matters more than the individual commits: merges here squash, so the title becomes the commit that lands on `main`. A workflow checks it, and will tell you what is wrong. Commits within a branch are squashed away, so tidy them if you like, but do not agonise over them.
+**The pull request title must follow the same format.** Pull requests in the package repositories are squash-merged, so each lands on `main` as one commit, and how that commit is written follows GitHub's squash settings there:
+
+- **With more than one commit**, the commit takes the pull request's title, and its body is the branch's commit messages, listed in order. They stay in the history, so write them to be read.
+- **With a single commit**, the commit keeps that commit's own message, title included, and the pull request title is not used. [aniread#133](https://github.com/animovement/aniread/pull/133) was titled `fix(aniread): …` and landed as `fix: …`. Make the commit's first line the title you want on `main` — amend it, or have whoever merges edit it in the merge dialog.
+- **The pull request description never reaches `main`.** A `BREAKING CHANGE:` footer belongs in a commit message, not only in the description.
+
+In animovement/.github and animovement-agents, a workflow checks the title and tells you what is wrong. The package repositories do not run that check, so a reviewer checks it there.
 
 `NEWS.md` is still written by hand, for users — the commit history drafts release notes, it does not replace them. The types above map onto the changelog sections described in *Changelogs*.
 
@@ -184,14 +192,67 @@ within a section — follow the
 [anicore's `NEWS.md`](https://github.com/animovement/anicore/blob/main/NEWS.md)
 is the worked example of all of the above.
 
+### What CI checks
+
+Every package runs the same CI, from shared workflows in [animovement/.github](https://github.com/animovement/.github). On every pull request, whatever branch it targets:
+
+- **`R-CMD-check`** runs `R CMD check` with the current R release on Ubuntu, macOS and Windows, and with the previous release (`oldrel-1`) on Ubuntu. Pushes to `main` add R-devel on Ubuntu, which has no binary packages and so is kept off pull requests.
+- **`anicore-metadata-contract`**, a job in the same workflow, refuses raw access to anicore's metadata outside anicore. See *anicore's metadata* below.
+- **`pkgdown`** builds the site. It deploys only outside pull requests: on pushes to `main`, on releases, and when run by hand.
+- **`test-coverage`** runs the tests under covr and uploads the result to Codecov.
+- **`format-suggest`** runs air over the pull request and posts what it would change as suggestions. It fails if air would change anything at all.
+
+`main` is protected by a ruleset that requires seven of these to pass before merging: the four `R-CMD-check` jobs, `pkgdown`, `test-coverage` and `format-suggest`. The `anicore-metadata-contract` job and Codecov's statuses are not required, so read them rather than relying on the merge button.
+
+**Coverage.** Codecov reports `codecov/patch` — how much of the changed code the tests exercise. It never blocks a merge (every package except animovement marks it informational in its `codecov.yml`, and in none is it a required check), but keep it at 100%: recent pull requests have covered every line they add. If a line genuinely cannot be tested, say so in the pull request.
+
+### Stacked pull requests
+
+A change that builds on another that has not been merged yet can be stacked: each pull request targets the branch of the one below it. The required checks run whatever branch a pull request targets, so every layer is checked on its own.
+
+Maintainers manage stacks with [GitHub's stacked pull requests](https://gh.io/stacks), through the `gh stack` extension to the GitHub CLI. Merging a stack lands each layer on `main` as its own squash commit, in order — so every layer needs its own Conventional Commit title, and its own matching commit message if it has a single commit (see *Commit messages*).
+
+If a lower layer is merged on its own instead, the layer above still targets the old branch, and still carries that layer's original commits. GitHub retargets it only when the merged branch is deleted, and these repositories do not delete branches on merge. Rebase it onto `main`, push, and retarget the pull request yourself:
+
+```sh
+git fetch origin
+git rebase --onto origin/main <old-tip-of-the-lower-branch> <upper-branch>
+git push --force-with-lease origin <upper-branch>
+gh pr edit <number> --base main
+```
+
+### Development versions
+
+Between releases a package's version is the last release plus a fourth component — `0.8.0.9000`, then `.9001`, `.9002` and so on. Most pull requests leave it alone. Bump the last component when a change has to be visible outside the repository:
+
+- **Another package will require it.** A package can only depend on code by version, so a pull request adding something another package will use bumps the development version itself ([anicore#171](https://github.com/animovement/anicore/pull/171)), and the dependent package raises its floor to that version.
+- **It has to reach the conda channel.** The conda packages on [prefix.dev](https://prefix.dev/channels/animovement) are built nightly by [animovement-forge](https://github.com/animovement/animovement-forge) from what R-universe has built, and a version already on the channel is not uploaded again. A change merged without a bump therefore does not reach conda users. A maintainer catches these up with a separate pull request, `chore(<package>): bump development version to <version>`, covering everything merged since the last bump ([animetric#75](https://github.com/animovement/animetric/pull/75)).
+
+### Depending on another animovement package
+
+- **Raise the floor** in `DESCRIPTION` when you use something that is new in another package of the suite — `anicore (>= 0.8.0.9004)` for a function that arrived in that version ([animetric#86](https://github.com/animovement/animetric/pull/86)).
+- **Wait for R-universe.** CI installs the other suite packages from [R-universe](https://animovement.r-universe.dev), not from GitHub. R-universe rebuilds a package after its `main` changes (anicore 0.8.0.9004 was published nine minutes after it merged), and until it has, a floor naming the new version cannot be met and the checks fail while installing dependencies. Once the version shows on `https://animovement.r-universe.dev/<package>`, re-run the failed jobs.
+- **Mirror the dependency in the conda recipe.** The recipes in animovement-forge list their dependencies by hand; the nightly job updates only the version and the commit. A new dependency or a raised floor needs the same change in `recipes/<package>/recipe.yaml` there, under both `host` and `run`.
+
+### anicore's metadata
+
+Outside anicore, read and write an aniframe's metadata only through anicore's accessors — `get_metadata()`, `set_metadata()`, `get_variables()`, `get_keys()`, `get_index()` and the other `get_*()` and `set_*()` functions. anicore is free to change how it stores metadata because nothing else depends on the layout ([anicore#155](https://github.com/animovement/anicore/issues/155)); raw access is what once turned a single layout change into a migration across the whole suite.
+
+The `anicore-metadata-contract` job enforces this in every package but anicore. It searches the `.R` files in `R/` — not `tests/`, and not lines that are only a comment — for `attr(…, "metadata")`, `$variables_what` (and `_when`, `_where`, `_index`, `_event`), and the same fields accessed with `[[`. A line that genuinely needs the raw attribute opts out with a trailing `# anicore: allow-metadata` comment on that same line. air moves a comment that trails an opening `{` onto the next line, out of the check's sight, so put the raw read in an assignment of its own:
+
+```r
+stored <- attr(x, "metadata") # anicore: allow-metadata
+if (is.null(stored)) {
+```
+
 ### Two commands that save round trips
 
-Comment on your pull request and a maintainer-triggered workflow will fix things for you:
+A comment on a pull request starting with one of these runs a workflow that fixes things for you:
 
 - **`/document`** re-runs roxygen and pushes the regenerated `man/` and `NAMESPACE`.
 - **`/style`** reformats the package with air and pushes the result.
 
-Both require a maintainer to run them, so ask in the pull request if you would like them applied.
+They act only on comments from members and owners of the animovement organisation, and ignore everyone else's, so ask in the pull request if you would like them applied.
 
 ### Code style
 
@@ -199,8 +260,9 @@ We follow the [tidyverse style guide](https://style.tidyverse.org) — for code 
 documentation in the next section.
 
 - **Formatting** is handled by [air](https://posit-dev.github.io/air/), which implements that guide,
-  so the two never disagree. Every pull request is checked and suggestions are posted inline. Please
-  do not reformat code unrelated to your change.
+  so the two never disagree. Every pull request is checked and suggestions are posted inline, and
+  the check (`format-suggest`) is required: it fails if air would change anything. Please do not
+  reformat code unrelated to your change.
 - **Documentation** uses [roxygen2](https://roxygen2.r-lib.org) with Markdown syntax. Edit the
   roxygen comments in `R/`, never the generated `.Rd` files in `man/`.
 - **Tests** use [testthat](https://testthat.r-lib.org). Contributions that come with tests are much
@@ -282,7 +344,7 @@ Tutorials spanning several packages live on [animovement.dev](https://animovemen
 
 ### Issues and pull requests
 
-Please use the templates. They exist so that a report has what is needed to act on it — a reproducible example and `animovement_sitrep()` output for a bug, the *why* rather than the *what* for a pull request. Filling them in properly is the single biggest thing that gets a contribution reviewed quickly. This applies equally if you are drafting with an AI assistant: complete the template rather than replacing it with generated prose. See the [AI use policy](AI.md).
+Please use the templates. They exist so that a report has what is needed to act on it — a reproducible example and `animovement_sitrep()` output for a bug, the *why* rather than the *what* for a pull request. Filling them in properly is the single biggest thing that gets a contribution reviewed quickly. This applies equally if you are drafting with an AI assistant: complete the template rather than replacing it with generated prose. See the [AI use policy](https://github.com/animovement/.github/blob/main/AI.md).
 
 Maintainers cutting a release should open a **Release checklist** issue from the template and work through it.
 
@@ -302,4 +364,4 @@ So a fix to what a function does belongs in the package; a new worked example be
 
 ## Code of Conduct
 
-This project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By contributing, you agree to abide by its terms.
+This project is released with a [Contributor Code of Conduct](https://github.com/animovement/.github/blob/main/CODE_OF_CONDUCT.md). By contributing, you agree to abide by its terms.

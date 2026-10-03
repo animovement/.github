@@ -38,5 +38,7 @@ Fill in as much of this as you can. If anything is unclear, leave a comment and 
 - [ ] Tests have been added covering new functionality
 - [ ] Documentation regenerated if roxygen comments changed (`devtools::document()`, or comment `/document` on this PR)
 - [ ] Code is formatted with [air](https://posit-dev.github.io/air/) (or comment `/style` on this PR)
-- [ ] A `NEWS.md` bullet added under `# (development version)` for any user-facing change
+- [ ] A `NEWS.md` bullet added under `# <package> (development version)` for any user-facing change
+- [ ] Title is a [Conventional Commit](https://github.com/animovement/.github/blob/main/CONTRIBUTING.md#commit-messages); with a single commit, its message matches the title
+- [ ] Development version bumped, if another package will require this change or it has to reach the conda channel on prefix.dev
 - [ ] I have read and understood every change I am submitting, and tested it myself
