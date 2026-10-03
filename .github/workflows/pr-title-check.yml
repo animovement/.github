@@ -3,8 +3,8 @@
 # — a local reference resolves at the pull request's own ref, which means a change
 # to the check is exercised by the pull request that makes it.
 #
-# Package repositories cannot do this: their stub must call
-# animovement/.github/.github/workflows/pr-title.yml@main. See CONTRIBUTING.md.
+# Any other repository has to call animovement/.github/.github/workflows/pr-title.yml@main
+# instead, as animovement-agents does. See CONTRIBUTING.md.
 name: pr-title-check
 
 on:

@@ -1,10 +1,12 @@
 # Reusable workflow: check that a pull request title follows Conventional Commits.
 #
-# Merges squash, so the pull request title becomes the commit that lands on main —
-# which is the commit release notes are drafted from. Individual commits within a
-# branch are squashed away and are not checked.
+# Release notes are drafted from the commits on main. A pull request squash-merged
+# with more than one commit lands under its title; one with a single commit keeps
+# that commit's own message, which this does not check.
 #
-# Called by a stub in each repository. See CONTRIBUTING.md for the types.
+# Called from animovement/.github (pr-title-check.yml) and animovement-agents. It is
+# not in workflows/stubs/, so the package repositories do not run it. See
+# CONTRIBUTING.md for the types.
 name: pr-title
 
 on:
