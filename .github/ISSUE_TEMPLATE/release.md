@@ -23,19 +23,16 @@ Bump the version in **every** place that carries it:
 
 - [ ] `DESCRIPTION` — drop the development suffix (`.9000`, `.9001`, …)
 - [ ] `CITATION.cff` — `version` and `date-released`
-- [ ] `inst/CITATION` — `version`, if the package has one
 - [ ] `NEWS.md` — the `# <package> (development version)` heading becomes `# <package> <version> (YYYY-MM-DD)`
-- [ ] `README.md` — re-render it. The version is embedded in the startup banner and the citation block, so it goes stale silently:
+- [ ] `README.md`, **animovement only**: re-render it. It is the only README that embeds a version, in the startup banner and the citation block, so it goes stale silently. The other packages' READMEs carry no version and need nothing:
 
   ```r
-  # packages with a README.qmd
   quarto::quarto_render("README.qmd")     # or, in a terminal: quarto render README.qmd
-
-  # packages with a README.Rmd
-  devtools::build_readme()
   ```
 
   Re-install the package first (`devtools::install()`), otherwise the banner renders the *previously installed* version rather than the one you just bumped.
+
+`inst/CITATION` needs no change: every package reads its version from `DESCRIPTION` with `meta$Version`.
 
 ## Release
 
@@ -50,5 +47,5 @@ Bump the version in **every** place that carries it:
 ## After
 
 - [ ] Bump `DESCRIPTION` to `<next version>.9000` and open a fresh `# <package> (development version)` section in `NEWS.md`
-- [ ] Re-render `README.md` so the embedded version matches
+- [ ] animovement only: re-render `README.md` so the embedded version matches
 - [ ] Check the pkgdown site rebuilt and deployed
