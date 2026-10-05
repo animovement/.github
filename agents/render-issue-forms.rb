@@ -20,7 +20,7 @@ end
 puts <<~HEAD
   # Issue templates, as markdown
 
-  The bug and feature templates are **GitHub issue forms**. They apply only in the web
+  The issue templates are **GitHub issue forms**. They apply only in the web
   UI — an issue opened with `gh issue create` or through the API gets none of their
   structure, and the YAML cannot be passed as a body. Reproduce the fields below by
   hand, and set the type explicitly with `--type`.
@@ -61,12 +61,16 @@ ARGV.each do |path|
   fields(doc).each do |f|
     label = f.dig("attributes", "label")
     render = f.dig("attributes", "render")
+    value = f.dig("attributes", "value")
     puts "## #{label}"
     puts
     if render
       puts "```#{render}"
       puts
       puts "```"
+    elsif value && !value.strip.empty?
+      # A prefilled field: the web form starts you with this, so the skeleton should too.
+      puts value.rstrip
     else
       puts "<!-- #{f.dig("validations", "required") ? "required" : "optional"} -->"
     end
