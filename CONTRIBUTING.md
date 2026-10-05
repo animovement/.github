@@ -320,13 +320,21 @@ documentation in the next section.
     "semicolon", "spaces_inside", "spaces_left_parentheses", "trailing_blank_lines",
     "trailing_whitespace", "whitespace"
   )
-  noisy <- paste0("tidyverse_", formatting, "_linter")
+  noisy <- c(
+    paste0("tidyverse_", formatting, "_linter"),
+    "lintr_duplicate_argument_linter"
+  )
   goodpractice::gp(checks = setdiff(goodpractice::all_checks(), noisy))
   ```
 
   That drops 16 formatting checks and keeps the semantic ones — `tidyverse_seq_linter`, which
   catches `1:length(x)` counting backwards on empty input, is worth the price of admission on
   its own.
+
+  It also drops `lintr_duplicate_argument_linter`, which misreads cli's repeated `"i" =` bullets
+  in `cli::cli_abort(c(...))` as an argument passed twice. Those are named elements of a
+  character vector, and repeating the name is how cli asks for several bullets, so every
+  multi-line message written the way this guide asks trips it. Leave those calls as they are.
 
   It runs `R CMD check`, lintr, cyclomatic complexity and coverage together, and reports things like print methods that don't return invisibly, unused internal functions, or untested code. Read it critically rather than treating every line as a defect — it flags `.onAttach` as uncalled, and counts roxygen comments as over-long lines. It is not part of CI for that reason.
 
