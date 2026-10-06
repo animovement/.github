@@ -18,5 +18,8 @@ coverage:
         threshold: 1%
         informational: true
 
+# Comment only when something needs attention: project coverage drops, or the
+# pull request adds lines the tests do not cover. `true` would comment on any
+# change to the report, which includes every pull request that adds tested code.
 comment:
-  require_changes: true
+  require_changes: "coverage_drop OR uncovered_patch"
