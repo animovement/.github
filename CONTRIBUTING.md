@@ -204,7 +204,7 @@ Every package runs the same CI, from shared workflows in [animovement/.github](h
 
 `main` is protected by a ruleset that requires seven of these to pass before merging: the four `R-CMD-check` jobs, `pkgdown`, `test-coverage` and `format-suggest`. The `anicore-metadata-contract` job and Codecov's statuses are not required, so read them rather than relying on the merge button.
 
-**Coverage.** Codecov reports `codecov/patch` — how much of the changed code the tests exercise. It never blocks a merge (every package except animovement marks it informational in its `codecov.yml`, and in none is it a required check), but keep it at 100%: recent pull requests have covered every line they add. If a line genuinely cannot be tested, say so in the pull request.
+**Coverage.** Codecov reports `codecov/patch` — how much of the changed code the tests exercise. It never blocks a merge (it is informational in the organisation-wide Codecov settings, kept in [`codecov/`](https://github.com/animovement/.github/tree/main/codecov) in animovement/.github, and in no package is it a required check), but keep it at 100%: recent pull requests have covered every line they add. If a line genuinely cannot be tested, say so in the pull request.
 
 ### Stacked pull requests
 

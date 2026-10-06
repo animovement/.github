@@ -1,0 +1,22 @@
+# Organisation-wide Codecov configuration for animovement.
+#
+# Codecov does not read this file. It is the canonical copy of the Global YAML
+# set at app.codecov.io under the animovement organisation's settings, kept here
+# so it is versioned and reviewed. After changing it, paste it in there.
+# See README.md.
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true
+
+comment:
+  require_changes: true
