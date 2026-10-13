@@ -107,7 +107,6 @@ jobs:
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
-        id: check
         with:
           args: 'c("--as-cran")'
           build_args: 'c("--compact-vignettes=gs+qpdf")'
@@ -116,10 +115,9 @@ jobs:
       - name: Report what CRAN would say
         if: always()
         shell: Rscript {0}
-        env:
-          CHECK_DIR: ${{ steps.check.outputs.check-dir-path }}
         run: |
-          log <- list.files(Sys.getenv("CHECK_DIR"), "^00check\\.log$", recursive = TRUE, full.names = TRUE)
+          # check-r-package's default check-dir; it doesn't expose the path
+          log <- list.files("check", "^00check\\.log$", recursive = TRUE, full.names = TRUE)
           if (length(log) == 0) stop("No check log found.")
           res <- rcmdcheck::parse_check(log[1])
           found <- c(
