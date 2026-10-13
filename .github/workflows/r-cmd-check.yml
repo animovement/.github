@@ -71,6 +71,74 @@ jobs:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
 
+  # What CRAN's own checks look at and the matrix above leaves out: the incoming
+  # checks (title and description, URLs, dependencies that aren't on CRAN, a new
+  # submission) and the PDF manual. check-r-package turns the incoming checks
+  # off unless _R_CHECK_CRAN_INCOMING_ is set. Until the suite is on CRAN, this
+  # reports rather than fails: what CRAN would say shows as warnings and in the
+  # job summary. Set error-on to "note" once a package is ready to submit.
+  cran-incoming:
+    name: CRAN incoming (ubuntu-latest, release)
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_CONFIG_AUTOLOADER_ENABLED: false
+      _R_CHECK_CRAN_INCOMING_: true
+      _R_CHECK_CRAN_INCOMING_REMOTE_: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+          extra-repositories: 'https://animovement.r-universe.dev'
+
+      # The PDF manual, which the matrix above skips
+      - uses: r-lib/actions/setup-tinytex@v2
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          cache-version: 2
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          args: 'c("--as-cran")'
+          build_args: 'c("--compact-vignettes=gs+qpdf")'
+          error-on: '"never"'
+
+      - name: Report what CRAN would say
+        if: always()
+        shell: Rscript {0}
+        run: |
+          # check-r-package's default check-dir; it doesn't expose the path
+          log <- list.files("check", "^00check\\.log$", recursive = TRUE, full.names = TRUE)
+          if (length(log) == 0) stop("No check log found.")
+          res <- rcmdcheck::parse_check(log[1])
+          found <- c(
+            stats::setNames(res$errors, rep("ERROR", length(res$errors))),
+            stats::setNames(res$warnings, rep("WARNING", length(res$warnings))),
+            stats::setNames(res$notes, rep("NOTE", length(res$notes)))
+          )
+          summary <- c(
+            "## What CRAN would say",
+            "",
+            sprintf("%d errors, %d warnings, %d notes, with CRAN's incoming checks and the PDF manual.", length(res$errors), length(res$warnings), length(res$notes)),
+            ""
+          )
+          for (i in seq_along(found)) {
+            first <- sub("\n.*", "", found[[i]])
+            # Annotations take one line; the summary keeps the detail
+            cat(sprintf("::warning title=CRAN incoming %s::%s\n", names(found)[i], first))
+            summary <- c(summary, sprintf("### %s: %s", names(found)[i], first), "", "```", found[[i]], "```", "")
+          }
+          cat(summary, file = Sys.getenv("GITHUB_STEP_SUMMARY"), sep = "\n", append = TRUE)
+
   # anicore changes its metadata storage freely because everything outside it
   # goes through get_metadata()/set_metadata() and the variables accessors
   # (animovement/anicore#155). Raw reads are what turned the #118 layout change
